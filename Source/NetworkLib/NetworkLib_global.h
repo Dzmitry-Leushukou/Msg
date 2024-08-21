@@ -1,0 +1,12 @@
+#ifndef NETWORKLIB_GLOBAL_H
+#define NETWORKLIB_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(NETWORKLIB_LIBRARY)
+#define NETWORKLIB_EXPORT Q_DECL_EXPORT
+#else
+#define NETWORKLIB_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // NETWORKLIB_GLOBAL_H
