@@ -17,7 +17,7 @@ Encryption occurs on each user's device.
 All accounts that have not been logged in for the last 7 days are deactivated. The user can also deactivate the account themselves. In case of deactivation. All user messages are deleted. Each user can delete a chat for themselves and for everyone.<br>
 
 ## Data models 
-
+* 
 ## Class diagram
 ![OOP Course drawio (3)](https://github.com/user-attachments/assets/b5f30ea6-720a-4f98-bd20-da84dfc67176)
 
