@@ -8,7 +8,7 @@ Ability to create chat with other user(s). The chat is created only when all use
 * **Chat update** <br>
 Updating chat information when a new message arrives.<br>
 * **Registration** <br>
-To register you only need a login and password<br>
+To register you only need a login and password<br>P.S. Login - unique sequence of characters<br> Password - sequence of at least 4 characters
 * **Decryption** <br>
 Decryption keys are stored locally by each user<br>
 * **Encryption** <br>
@@ -31,7 +31,8 @@ Chat
 * `last_message_time`
 * `messages`
 ## Class diagram
-![OOP Course drawio (4)](https://github.com/user-attachments/assets/1fad96a7-1327-44b4-9da0-15dc5605cb68)
+![OOP Course drawio (5)](https://github.com/user-attachments/assets/34978549-01e4-4924-8495-fa3b62a2f6f5)
+
 
 
 
