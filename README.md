@@ -17,9 +17,22 @@ Encryption occurs on each user's device.
 All accounts that have not been logged in for the last 7 days are deactivated. The user can also deactivate the account themselves. In case of deactivation. All user messages are deleted. Each user can delete a chat for themselves and for everyone.<br>
 
 ## Data models 
-* 
+The database will store encrypted chats and user data.
+### Table of users
+User
+* `username`
+* `id`
+* `chats_id` (What chats does the user belong to)
+* `last_active`
+### Table of chats
+Chat
+* `id`
+* `name`
+* `last_message_time`
+* `messages`
 ## Class diagram
-![OOP Course drawio (3)](https://github.com/user-attachments/assets/b5f30ea6-720a-4f98-bd20-da84dfc67176)
+![OOP Course drawio (4)](https://github.com/user-attachments/assets/1fad96a7-1327-44b4-9da0-15dc5605cb68)
+
 
 
 
