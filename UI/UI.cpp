@@ -25,6 +25,11 @@ void UI::show()
 		login();
 		return;
 	}
+
+	if (!chat)
+	{
+
+	}
 }
 
 void UI::login()
@@ -47,7 +52,7 @@ void UI::login()
 			registration();
 		}
 		else
-			return;
+			loadInfo();
 	}
 	user = new User(DBService::getUser(username, password));
 }
@@ -78,8 +83,9 @@ void UI::registration()
 				catch (const std::invalid_argument& e) //User not found =>
 				{
 					//create account
-					user = new User(DBService::getUser(username, password));
+					user = new User(username, password);
 					DBService::createUser(user);
+					loadInfo();
 					return;
 				}
 				std::cout << "Username is already in use\n";
@@ -103,4 +109,28 @@ std::pair<std::string,std::string> UI::userForm()
 	std::cout << "Password: ";
 	std::cin >> password;
 	return { username,password };
+}
+
+void UI::loadInfo()
+{
+	system("cls");
+	std::cout << "==Loading info==\n";
+	std::cout << "Getting list of chats\n";
+	chatHeaders = user->getListOfChats();
+	
+}
+
+void UI::chatList()
+{
+	system("cls");
+	std::cout << "Choose chat by id:\n";
+	for (int i = 0; i < chatHeaders.size(); i++)
+	{
+		std::cout << i << ". " << chatHeaders[i]<<'\n';
+	}
+
+	std::cout << "Id: ";
+	int id;
+	std::  cin >> id;
+
 }
