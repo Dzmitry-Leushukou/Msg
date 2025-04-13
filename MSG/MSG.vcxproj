@@ -128,12 +128,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Chat.cpp" />
-    <ClCompile Include="DBService.cpp" />
+    <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="Client.cpp" />
+    <ClCompile Include="Image.cpp" />
+    <ClCompile Include="Message.cpp" />
+    <ClCompile Include="Text.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Chat.h" />
-    <ClInclude Include="DBService.h" />
+    <ClInclude Include="Crypto.h" />
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="Image.h" />
+    <ClInclude Include="Message.h" />
+    <ClInclude Include="Text.h" />
     <ClInclude Include="User.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
