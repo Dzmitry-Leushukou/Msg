@@ -14,7 +14,7 @@ Decryption keys are stored locally by each user<br>
 * **Encryption** <br>
 Encryption occurs on each user's device.
 * **Safety** <br>
-All accounts that have not been logged in for the last 7 days are deactivated. The user can also deactivate the account themselves. In case of deactivation. All user messages are deleted. Each user can delete a chat for themselves and for everyone.<br>
+All accounts that have not been logged in for the last 7 days are deactivated. The user can also deactivate the account themselves. In case of deactivation. All user messages are deleted. Each user can delete a chat for everyone.<br>
 
 ## Data models 
 The database will store encrypted chats and user data.
