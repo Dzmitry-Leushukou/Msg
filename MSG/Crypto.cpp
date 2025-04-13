@@ -1,10 +1,6 @@
 #include "Crypto.h"
-static std::string encryptLogin()
+std::pair<std::string, std::string>Crypto::genKeys()
 {
-
-}
-static std::string encryptPassword()
-{
-
+	return {};
 }
 

@@ -106,3 +106,33 @@ void Client::closeConnection()
 	}
 	WSACleanup(); 
 }
+
+bool Client::userExist(std::string username)
+{
+	sendMessage(username + " ?");
+	std::string answer = receiveMessage();
+	return stoi(answer);
+}
+
+std::string Client::getMAC()
+{
+	ULONG bufferSize = 0;
+	GetAdaptersAddresses(AF_UNSPEC, 0, NULL, NULL, &bufferSize);
+	std::vector<BYTE> buffer(bufferSize);
+
+	IP_ADAPTER_ADDRESSES* pAddresses = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+	if (GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAddresses, &bufferSize) == NO_ERROR) {
+		std::ostringstream macAddressStream;
+
+		for (IP_ADAPTER_ADDRESSES* pCurrAddresses = pAddresses; pCurrAddresses != NULL; pCurrAddresses = pCurrAddresses->Next) {
+			for (int i = 0; i < pCurrAddresses->PhysicalAddressLength; i++) {
+				if (i > 0) {
+					macAddressStream << "-";
+				}
+				macAddressStream << std::hex << static_cast<int>(pCurrAddresses->PhysicalAddress[i]);
+			}
+			return macAddressStream.str(); // Возвращаем первый найденный MAC-адрес
+		}
+	}
+	throw std::runtime_error("Can`t getting MAC addres");
+}
