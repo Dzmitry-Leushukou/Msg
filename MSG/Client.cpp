@@ -107,11 +107,40 @@ void Client::closeConnection()
 	WSACleanup(); 
 }
 
-bool Client::userExist(std::string username)
+bool Client::userExist(std::string username, std::string password)
 {
-	sendMessage(username + " ?");
+	sendMessage(username + " " + password + " ?");
 	std::string answer = receiveMessage();
 	return stoi(answer);
+}
+
+int Client::checkDevice()
+{
+	sendMessage(getMAC() + " ?");
+	std::string answer = receiveMessage();
+	return stoi(answer);
+}
+
+std::string Client::getUserData(std::string login)
+{
+	sendMessage(login);
+	return receiveMessage();
+}
+
+void Client::sendVerifyRequest(std::string login)
+{
+	sendMessage(login + " " + getMAC() + " +");
+}
+
+void Client::addUser(std::string login, std::string password,
+					 std::string publicKey, std::string privateKey)
+{
+	sendMessage(login + " " + password + " " + publicKey + " " + privateKey + " +");
+}
+
+void Client::verifyDevice(std::string login, std::string address, bool verdict)
+{
+	sendMessage(login + " " + address + " " + std::to_string(verdict) + " +");
 }
 
 std::string Client::getMAC()
@@ -121,17 +150,21 @@ std::string Client::getMAC()
 	std::vector<BYTE> buffer(bufferSize);
 
 	IP_ADAPTER_ADDRESSES* pAddresses = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
-	if (GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAddresses, &bufferSize) == NO_ERROR) {
+	if (GetAdaptersAddresses(AF_UNSPEC, 0, NULL, pAddresses, &bufferSize) == NO_ERROR)
+	{
 		std::ostringstream macAddressStream;
 
-		for (IP_ADAPTER_ADDRESSES* pCurrAddresses = pAddresses; pCurrAddresses != NULL; pCurrAddresses = pCurrAddresses->Next) {
-			for (int i = 0; i < pCurrAddresses->PhysicalAddressLength; i++) {
-				if (i > 0) {
+		for (IP_ADAPTER_ADDRESSES* pCurrAddresses = pAddresses; pCurrAddresses != NULL; pCurrAddresses = pCurrAddresses->Next)
+		{
+			for (int i = 0; i < pCurrAddresses->PhysicalAddressLength; i++)
+			{
+				if (i > 0) 
+				{
 					macAddressStream << "-";
 				}
 				macAddressStream << std::hex << static_cast<int>(pCurrAddresses->PhysicalAddress[i]);
 			}
-			return macAddressStream.str(); // Возвращаем первый найденный MAC-адрес
+			return macAddressStream.str();
 		}
 	}
 	throw std::runtime_error("Can`t getting MAC addres");

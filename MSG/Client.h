@@ -18,7 +18,12 @@ public:
 	static void init();
 	static std::string getMAC();
 	//Requests
-	static bool userExist(std::string);
+	static bool userExist(std::string,std::string);
+	static int checkDevice();
+	static std::string getUserData(std::string);
+	static void sendVerifyRequest(std::string);
+	static void addUser(std::string, std::string, std::string, std::string);
+	static void verifyDevice(std::string, std::string, bool);
 private:
 	static int port;
 	static std::string ip;
