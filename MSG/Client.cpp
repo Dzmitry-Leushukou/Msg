@@ -121,10 +121,56 @@ int Client::checkDevice()
 	return stoi(answer);
 }
 
-std::string Client::getUserData(std::string login)
+std::vector<std::string> Client::getUserData(std::string login)
 {
 	sendMessage(login);
+	std::vector<std::string>data;
+	while (true)
+	{
+		std::string s = receiveMessage();
+		if (s != "...end...")
+			data.push_back(s);
+		else
+			return data;
+	}
+}
+
+std::string Client::getChatHeader(std::string id)
+{
+	sendMessage(id + " h?");
 	return receiveMessage();
+}
+
+std::vector<std::unique_ptr<Message>> Client::getMessages(std::string chatID)
+{
+	sendMessage(chatID + " m?");
+	std::vector<std::unique_ptr<Message>>msg;
+	while (true)
+	{
+		std::string r = receiveMessage();
+		if (r == "...end...")
+			return msg;
+		std::string type = receiveMessage();
+		std::string data = receiveMessage();
+		if (type == "image") 
+		{
+			std::string format = receiveMessage();
+			msg.push_back(std::make_unique<Image>(r,type,Crypto::decrypt(data)));
+				continue;
+		}
+		msg.push_back(std::make_unique<Text>(r, Crypto::decrypt(data)));
+	}
+
+}
+
+void Client::deleteChat(std::string id)
+{
+	sendMessage(id + " -");
+}
+
+void Client::sendMessage(std::string id, std::string sender, std::string type, std::string data, std::string format)
+{
+	sendMessage(id + " " + sender + " " + type + " " + data + " " + format + " m+");
 }
 
 void Client::sendVerifyRequest(std::string login)
@@ -167,5 +213,5 @@ std::string Client::getMAC()
 			return macAddressStream.str();
 		}
 	}
-	throw std::runtime_error("Can`t getting MAC addres");
+	throw std::runtime_error("Can`t getting MAC address");
 }
