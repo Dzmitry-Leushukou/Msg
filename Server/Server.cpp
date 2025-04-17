@@ -167,6 +167,17 @@ std::vector<std::string> Server::process(std::string message)
             addChat(message);
             return {};
         }
+
+        if (type == " d?")
+        {
+            return getDevice(message);
+        }
+
+        if (type == " u-")
+        {
+            deleteUser(message);
+            return {};
+        }
     }
     if (message.size() > 4) 
     {
@@ -178,6 +189,32 @@ std::vector<std::string> Server::process(std::string message)
             return {};
         }
     }
+
+}
+
+void Server::deleteUser(std::string message)
+{
+    std::string id;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        id += message[i];
+    }
+    i++;
+    //request to delete user from all chats. delete user from db
+}
+
+std::vector<std::string> Server::getDevice(std::string message)
+{
+    std::string id;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        id += message[i];
+    }
+    i++;
+    //request to db
+    return { };
 
 }
 
@@ -218,22 +255,15 @@ void Server::addChat(std::string message)
 
 std::vector<std::string> Server::getInvite(std::string message)
 {
-    std::string sender;
-    std::string chatID;
+    std::string id;
     int i = 0;
     while (message[i] != ' ')
     {
-        sender += message[i];
+        id += message[i];
     }
     i++;
-    while (message[i] != ' ')
-    {
-        chatID += message[i];
-    }
-    i++;
-    if (chatID == "")
-        chatID = "...end...";
-    return { sender,chatID };
+    //request to db
+    return { };
 
 }
 

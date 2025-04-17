@@ -34,6 +34,8 @@ private:
     std::vector<std::string> getInvite(std::string);
     void addChat(std::string);
     void createChat(std::string);
+    std::vector<std::string> getDevice(std::string);
+    void deleteUser(std::string);   
 
     int port;
     SOCKET serverSocket;
