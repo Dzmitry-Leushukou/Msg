@@ -1,0 +1,8 @@
+*Client
+static void init();+
+static std::string getMAC();+
+static void sendMessage(const std::string& message);+
+static std::string receiveMessage();+
+*Image
+void save(std::string);+
+void open();+

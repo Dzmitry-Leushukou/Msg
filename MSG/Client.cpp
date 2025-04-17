@@ -5,11 +5,11 @@ std::string Client::ip = "";
 SOCKET Client::sock = INVALID_SOCKET;
 sockaddr_in Client::serv_addr;
 
-void Client::init()
+void Client::init(std::string filepath)
 {
 	try
 	{
-		std::ifstream fin("config");
+		std::ifstream fin(filepath);
 		std::string s;
 	
 		if (fin >> s)
@@ -63,7 +63,7 @@ void Client::connectToServer()
 	if (inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr) <= 0) {
 		closesocket(sock);
 		WSACleanup();
-		throw std::invalid_argument("Invalid IP address");
+		throw std::runtime_error("Invalid IP address");
 	}
 
 	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == SOCKET_ERROR) {

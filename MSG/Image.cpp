@@ -19,14 +19,14 @@ void Image::open()
 
 void Image::save(std::string filepath)
 {
-    std::ofstream fout(filepath+format);
+    std::ofstream fout(filepath+"."+format);
     if (!fout)
     {
         throw std::invalid_argument("Can`t save image in this location");
     }
     fout << data;
     fout.close();
-    this->filepath = filepath + format;
+    this->filepath = filepath + "." + format;
 }
 
 std::string Image::to_string()

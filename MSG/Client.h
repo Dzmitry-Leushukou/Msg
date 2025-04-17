@@ -19,7 +19,7 @@
 class Client
 {
 public:
-	static void init();
+	static void init(std::string filepath="config");
 	static std::string getMAC();
 	//Requests
 	static bool userExist(std::string,std::string);

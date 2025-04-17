@@ -6,15 +6,17 @@ void Chat::newMessages(std::vector<std::unique_ptr<Message>>nm)
 		messages.push_back(std::move(msg));
 }
 
-void Chat::show()
+std::vector<std::string> Chat::show()
 {
+	std::vector<std::string> res;
 	for (auto& i : messages)
 	{
-		std::cout << i->to_string() << '\n';
+		res.push_back(i->to_string() +"\n");
 	}
+	return res;
 }
 
-Chat::Chat(std::vector<std::unique_ptr<Message>> m	)
+Chat::Chat(std::vector<std::unique_ptr<Message>> m)
 {
 	messages = std::move(m);
 }
