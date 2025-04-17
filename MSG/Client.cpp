@@ -182,12 +182,12 @@ void Client::sendVerifyRequest(std::string login)
 void Client::addUser(std::string login, std::string password,
 					 std::string publicKey, std::string privateKey)
 {
-	sendMessage(login + " " + password + " " + publicKey + " " + privateKey + " +");
+	sendMessage(login + " " + password + " " + publicKey + " " + privateKey + " u+");
 }
 
 void Client::verifyDevice(std::string login, std::string address, bool verdict)
 {
-	sendMessage(login + " " + address + " " + std::to_string(verdict) + " +");
+	sendMessage(login + " " + address + " " + std::to_string(verdict) + " v+");
 }
 
 std::string Client::getMAC()

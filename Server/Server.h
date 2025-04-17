@@ -24,6 +24,11 @@ private:
     int checkDevice(std::string);
     std::vector<std::string>getUserData(std::string);
     std::vector<std::string>getHeader(std::string);
+    std::vector<std::string>getMessages(std::string);
+    void deleteChat(std::string);
+    void sendMessage(std::string);
+    void addVerifyRequest(std::string);
+    void createUser(std::string);
 
     int port;
     SOCKET serverSocket;

@@ -100,7 +100,18 @@ std::vector<std::string> Server::process(std::string message)
 
             response.push_back(std::to_string(checkDevice(message)));
             return response;
-            
+        }
+        
+        if (type == " -")
+        {
+            deleteChat(message);
+            return {};
+        }
+
+        if (type == " +")
+        {
+            addVerifyRequest(message);
+            return {};
         }
     }
 
@@ -108,19 +119,110 @@ std::vector<std::string> Server::process(std::string message)
     {
         std::string type;
         type = message[message.size() - 3] + message[message.size() - 2] + message[message.size() - 1];
+        
         if (type == " h?")
         {
+            response = getHeader(message);
+            return response;
+        }
 
-            if (message.find(" ") < message.size() && message.find(" ") != message.find(" ?"))
-            {
-                response = getHeader(message);
-                return response;
-            }
+        if (type == " m?")
+        {
+            getMessages(message);
+            response.push_back("...end...");
+            return response;
+        }
+
+        if (type == " m+")
+        {
+            sendMessage(message);
+            return {};
         }
     }
 
-    std::reverse(response.begin(), response.end());
-    return response;
+}
+ 
+void Server::addVerifyRequest(std::string message)
+{
+    std::string login;
+    std::string mac;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        login += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        mac += message[i];
+    }
+    //request to db: add to user with login mac to list of verifies
+}
+
+void Server::sendMessage(std::string message)
+{
+    std::string id;
+    std::string sender;
+    std::string type;
+    std::string data;
+    std::string format;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        id += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        sender += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        type += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        data += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        format += message[i];
+    }
+    i++;
+
+    //requets to add type message sent by sender in data on chat with id
+
+}
+
+void Server::deleteChat(std::string id)
+{
+    //request to db to delete chat for all users & delete chat field
+
+}
+
+std::vector<std::string>Server::getMessages(std::string req)
+{
+    std::string chatID,time;
+    int i = 0;
+    while (req[i] != ' ')
+    {
+        chatID += req[i];
+        i++;
+    }
+    i++;
+    while (req[i] != ' ')
+    {
+        time += req[i];
+        i++;
+    }
+
+    std::vector<std::string>ans;
+    //request to db
+    reverse(ans.begin(), ans.end());
+    return ans;
 }
 
 std::vector<std::string>Server::getHeader(std::string id)//Header by chatID
