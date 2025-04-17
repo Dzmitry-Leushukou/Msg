@@ -143,7 +143,7 @@ std::string Client::getChatHeader(std::string id)
 
 std::vector<std::unique_ptr<Message>> Client::getMessages(std::string chatID,std::string time)
 {
-	sendMessage(chatID + "time "+ " m?");
+	sendMessage(chatID + " " + time + " m?");
 	std::vector<std::unique_ptr<Message>>msg;
 	while (true)
 	{

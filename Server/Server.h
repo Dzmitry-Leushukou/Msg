@@ -19,6 +19,11 @@ public:
 
 private:
     std::vector<std::string> process(std::string);
+    //request processing
+    bool userExist(std::string);
+    int checkDevice(std::string);
+    std::vector<std::string>getUserData(std::string);
+    std::vector<std::string>getHeader(std::string);
 
     int port;
     SOCKET serverSocket;
