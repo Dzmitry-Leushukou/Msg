@@ -156,7 +156,84 @@ std::vector<std::string> Server::process(std::string message)
             sendInvite(message);
             return {};
         }
+
+        if (type == " i?")
+        {
+            return getInvite(message);
+        }
+
+        if (type == " c+")
+        {
+            addChat(message);
+            return {};
+        }
     }
+    if (message.size() > 4) 
+    {
+        std::string type;
+        type += message[message.size() - 4] + message[message.size() - 3] + message[message.size() - 2] + message[message.size() - 1];
+        if (type == " ac+")
+        {
+            addChat(message);
+            return {};
+        }
+    }
+
+}
+
+void Server::createChat(std::string message)
+{
+    std::string id;
+    std::string chatID;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        id += message[i];
+        i++;
+    }
+    i++;
+    //create chat & userid to chat & chatid to user
+
+}
+
+void Server::addChat(std::string message)
+{
+    std::string id;
+    std::string chatID;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        id += message[i];
+        i++;
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        id += message[i];
+        i++;
+    }
+
+    //add chatID to user chats && add userid to chat
+}
+
+std::vector<std::string> Server::getInvite(std::string message)
+{
+    std::string sender;
+    std::string chatID;
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        sender += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        chatID += message[i];
+    }
+    i++;
+    if (chatID == "")
+        chatID = "...end...";
+    return { sender,chatID };
 
 }
 

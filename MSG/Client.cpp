@@ -238,10 +238,8 @@ void Client::createChat(std::string sender, std::string id,std::string chat)
 	if (chat == "")
 	{
 		sendMessage(sender + " c+");
-		sendMessage(id + " c+");
-		return;
 	}
-	sendMessage(id + " ac+");
+	sendMessage(id +" " + chat + " ac+");
 
 }
 std::string Client::getDevice(std::string id)

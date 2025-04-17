@@ -31,6 +31,9 @@ private:
     void createUser(std::string);
     void verifyDevice(std::string);
     void sendInvite(std::string);
+    std::vector<std::string> getInvite(std::string);
+    void addChat(std::string);
+    void createChat(std::string);
 
     int port;
     SOCKET serverSocket;
