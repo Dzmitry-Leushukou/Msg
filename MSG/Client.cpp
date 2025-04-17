@@ -217,9 +217,9 @@ std::string Client::getMAC()
 	throw std::runtime_error("Can`t getting MAC address");
 }
 
-void Client::sentInvite(std::string sender, std::string receiverId)
+void Client::sentInvite(std::string sender, std::string receiverId,std::string chatID)
 {
-	sendMessage(sender + " " + receiverId + " i+");
+	sendMessage(sender + " " + receiverId + chatID +" i+");
 }
 
 std::pair<std::string,std::string> Client::getInvite(std::string id)

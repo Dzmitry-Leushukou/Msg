@@ -29,6 +29,8 @@ private:
     void sendMessage(std::string);
     void addVerifyRequest(std::string);
     void createUser(std::string);
+    void verifyDevice(std::string);
+    void sendInvite(std::string);
 
     int port;
     SOCKET serverSocket;

@@ -138,10 +138,112 @@ std::vector<std::string> Server::process(std::string message)
             sendMessage(message);
             return {};
         }
+
+        if (type == " u+")
+        {
+            createUser(message);
+            return {};
+        }
+
+        if (type == " v+")
+        {
+            verifyDevice(message);
+            return {};
+        }
+
+        if (type == " i+")
+        {
+            sendInvite(message);
+            return {};
+        }
     }
 
 }
- 
+
+void Server::sendInvite(std::string message)
+{
+    std::string sender;
+    std::string receiver;
+    std::string chatID;
+
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        sender += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        receiver += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        chatID += message[i];
+    }
+    i++;
+    
+    //add invite to invite list in receiver by sender to chatid
+}
+
+void Server::verifyDevice(std::string message)
+{
+    std::string login;
+    std::string addres;
+    std::string verdict;
+
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        login += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        addres += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        verdict += message[i];
+    }
+    i++;
+
+    //add addres to login ith list (-1/0/1)
+}
+
+void Server::createUser(std::string message)
+{
+    std::string login;
+    std::string password;
+    std::string publicKey;
+    std::string privateKey;
+
+    int i = 0;
+    while (message[i] != ' ')
+    {
+        login += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        password += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        publicKey += message[i];
+    }
+    i++;
+    while (message[i] != ' ')
+    {
+        privateKey += message[i];
+    }
+    i++;
+
+    //create user in db
+}
+
 void Server::addVerifyRequest(std::string message)
 {
     std::string login;
