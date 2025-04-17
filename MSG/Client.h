@@ -29,9 +29,15 @@ public:
 	static void addUser(std::string, std::string, std::string, std::string);
 	static void verifyDevice(std::string, std::string, bool);
 	static std::string getChatHeader(std::string);
-	static std::vector<std::unique_ptr<Message>> getMessages(std::string);
+	static std::vector<std::unique_ptr<Message>> getMessages(std::string, std::string time = "00/00/0000/00/00/00");
 	static void deleteChat(std::string id);
 	static void sendMessage(std::string id,std::string sender, std::string type, std::string data, std::string format ="");
+	static void sentInvite(std::string sender, std::string receiverId);
+	static std::pair<std::string,std::string> getInvite(std::string id);
+	static void createChat(std::string, std::string, std::string id = "");
+	static std::string getDevice(std::string);
+	static void deleteUser(std::string);
+	
 private:
 	static int port;
 	static std::string ip;

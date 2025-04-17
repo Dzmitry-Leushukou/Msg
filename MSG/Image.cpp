@@ -1,11 +1,12 @@
 #include "Image.h"
 
 
-Image::Image(std::string sender, std::string format,std::string data)
+Image::Image(std::string sender, std::string format,std::string data, std::string time)
 {
 	this->sender = sender;
-	format = format;
+	this->format = format;
 	this->data = data;
+    timestamp = time;
 }
 
 void Image::open()

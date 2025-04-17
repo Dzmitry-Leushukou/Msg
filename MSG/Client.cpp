@@ -141,9 +141,9 @@ std::string Client::getChatHeader(std::string id)
 	return receiveMessage();
 }
 
-std::vector<std::unique_ptr<Message>> Client::getMessages(std::string chatID)
+std::vector<std::unique_ptr<Message>> Client::getMessages(std::string chatID,std::string time)
 {
-	sendMessage(chatID + " m?");
+	sendMessage(chatID + "time "+ " m?");
 	std::vector<std::unique_ptr<Message>>msg;
 	while (true)
 	{
@@ -152,13 +152,14 @@ std::vector<std::unique_ptr<Message>> Client::getMessages(std::string chatID)
 			return msg;
 		std::string type = receiveMessage();
 		std::string data = receiveMessage();
+		std::string time = receiveMessage();
 		if (type == "image") 
 		{
 			std::string format = receiveMessage();
-			msg.push_back(std::make_unique<Image>(r,type,Crypto::decrypt(data)));
+			msg.push_back(std::make_unique<Image>(r,type,Crypto::decrypt(data),time));
 				continue;
 		}
-		msg.push_back(std::make_unique<Text>(r, Crypto::decrypt(data)));
+		msg.push_back(std::make_unique<Text>(r, Crypto::decrypt(data),time));
 	}
 
 }
@@ -214,4 +215,47 @@ std::string Client::getMAC()
 		}
 	}
 	throw std::runtime_error("Can`t getting MAC address");
+}
+
+void Client::sentInvite(std::string sender, std::string receiverId)
+{
+	sendMessage(sender + " " + receiverId + " i+");
+}
+
+std::pair<std::string,std::string> Client::getInvite(std::string id)
+{
+	sendMessage(id + " i?");
+	std::string sender = receiveMessage();
+	if (sender == "...end...")
+		return {"",""};
+	std::string idOfChat = receiveMessage();
+	if (idOfChat == "...end...")
+		return { sender,"" };
+	return { sender,idOfChat};
+}
+void Client::createChat(std::string sender, std::string id,std::string chat)
+{
+	if (chat == "")
+	{
+		sendMessage(sender + " c+");
+		sendMessage(id + " c+");
+		return;
+	}
+	sendMessage(id + " ac+");
+
+}
+std::string Client::getDevice(std::string id)
+{
+	sendMessage(id + " d?");
+	std::string ans = receiveMessage();
+	if (ans == "...end...")
+	{
+		return "";
+	}
+	return ans;
+}
+
+void Client::deleteUser(std::string id)
+{
+	sendMessage(id + " u-");
 }

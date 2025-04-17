@@ -9,7 +9,7 @@ class Image :
     public Message
 {
 public:
-    Image(std::string, std::string, std::string);
+    Image(std::string, std::string, std::string,std::string);
     void save(std::string);
     void open();
     std::string to_string() override;

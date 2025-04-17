@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <time.h>
+#include <chrono>
 
 class Message
 {
@@ -11,6 +11,6 @@ public:
 protected:
 	std::string sender;
 	std::string data;
-	time_t last;
+	std::string timestamp;
 };
 
