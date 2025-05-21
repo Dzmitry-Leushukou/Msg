@@ -1,35 +1,15 @@
 #pragma once
 
 #include <iostream>
-#include <clocale>
-
-#include "Chat.h"
 #include "User.h"
-#include "DBService.h"
+#include "LoginForm.h"
 
 class UI
 {
 public:
-	//Constructors
-	UI();
-	
-	//Methods
-	void inputHandler();
-
-	//Fields
-
+	void start();
 private:
-	//Methods
-	void show();
-	void login();
-	void registration();
-	void loadInfo();
-	void chatList();
-	std::pair<std::string, std::string> userForm();
-	
-	//Fields
+	void authorize();
 	User* user = nullptr;
-	std::vector<std::string>chatHeaders;
-	Chat* chat = nullptr;
 };
 

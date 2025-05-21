@@ -3,5 +3,7 @@
 int main()
 {
 	UI* ui = new UI();
-	ui->inputHandler();
+	ui->start();
+	delete ui;
+	ui = nullptr;
 }
