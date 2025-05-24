@@ -25,15 +25,16 @@ void Application::setUser(std::string login)
 
 void Application::regUser(const std::string login, const std::string password)
 {
-	FileService::saveToFile(skey_path,Utils::to_string(client->registerUser(login, password, {curMAC})));
-	//loginUser(login, password);
+	client->registerUser(login, password, {curMAC});
+	loginUser(login, password);
 	//regen private key
 }
 
-void Application::loginUser(std::string login, std::string password)
+void Application::loginUser(const std::string login, const std::string password)
 {
-
-	user = new User(login);
+	std::pair<std::vector<unsigned char>, json>login_data = client->loginUser(login, password, curMAC);
+	FileService::saveToFile(skey_path, Utils::to_string(login_data.first));
+	user = new User(login_data.second);
 }
 bool Application::authorized() const
 {

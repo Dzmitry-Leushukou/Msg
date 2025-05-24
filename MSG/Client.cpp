@@ -7,14 +7,53 @@ Client::Client(std::string api, std::string pid)
 	Crypto::init();
 }
 
-std::vector<unsigned char> Client::registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs)
+std::pair<std::vector<unsigned char>, json> Client::loginUser(const std::string& username, const std::string& password, const std::string& current_mac)
 {
-	/*
-	if (getUserDocument(username)) 
+	json user_data = getUserDocument(username);
+	if (user_data.empty())
 	{
-		throw std::invalid_argument("Username \""+username+"\" already used");
+		throw std::invalid_argument("User not found\n");
 	}
-	*/
+
+	if (!Crypto::verifyPassword(password, user_data["password"]))
+	{
+		throw std::invalid_argument("User not found\n");
+	}
+
+	if (!checkMacAddress(user_data["allowed_macs"], current_mac))
+	{
+		throw std::invalid_argument("NO ACCESS\nP.S.\nRequest to get was sent\n");
+	}
+
+	std::vector<std::string> macs = user_data["allowed_macs"];
+	std::vector<unsigned char> private_key, public_key;
+	Crypto::generateKeyPair(macs, private_key, public_key);
+	
+	int ind = 0;
+	bool first = false;
+	for(auto&i:user_data["public_key"])
+	{
+		if (!first)
+		{
+			first = true;
+			continue;
+		}
+		if (ind == public_key.size())
+			break;
+		if(public_key.at(ind)!= i)
+			throw std::runtime_error("Can`t authorize to this account\n");
+	}
+		
+	return {private_key, user_data};
+}
+
+void Client::registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs)
+{
+	if (!getUserDocument(username).empty()) 
+	{
+		throw std::invalid_argument("Username \""+username+"\" already exist\n");
+	}
+	
 	std::vector<unsigned char> private_key, public_key;
 	Crypto::generateKeyPair(macs, private_key, public_key);
 
@@ -28,9 +67,9 @@ std::vector<unsigned char> Client::registerUser(const std::string& username, con
 	};
 
 	if (!saveToFirestore("users", username, user_data))
-		throw std::runtime_error("Can`t acces to server");
-	return private_key;
+		throw std::runtime_error("Can`t acces to server\n");
 }
+
 std::string Client::getMAC()
 {
 	ULONG bufferSize = 0;
@@ -134,4 +173,54 @@ bool Client::saveToFirestore(const std::string& collection, const std::string& d
 	}
 
 	return true;
+}
+
+json Client::getUserDocument(const std::string& username)
+{
+	curl = curl_easy_init();
+	std::string response;
+	std::string url = "https://firestore.googleapis.com/v1/projects/" +
+		proj_id + "/databases/(default)/documents/users/" +
+		username + "?key=" + api;
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	curl_easy_cleanup(curl);
+
+	if (http_code != 200) return json();
+
+	json document = json::parse(response);
+
+	return parseFirestoreFields(document["fields"]);
+}
+
+size_t Client::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output)
+{
+	size_t total_size = size * nmemb;
+	output->append(static_cast<char*>(contents), total_size);
+	return total_size;
+}
+
+json Client::parseFirestoreFields(const json& fields) 
+{
+	json result;
+	for (auto& [key, value] : fields.items()) {
+		if (value.contains("stringValue")) {
+			result[key] = value["stringValue"];
+		}
+		else if (value.contains("arrayValue")) {
+			std::vector<std::string> items;
+			if(!value["arrayValue"].empty())
+			for (auto& item : value["arrayValue"]["values"]) {
+				items.push_back(item["stringValue"]);
+			}
+			result[key] = items;
+		}
+	}
+	return result;
 }

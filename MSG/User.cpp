@@ -1,8 +1,8 @@
 #include "User.h"
 
-User::User(std::string login) : username(login)
+User::User(json data)
 {
-	
+
 }
 void User::setPublicKey(std::string public_key)
 {

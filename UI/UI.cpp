@@ -17,6 +17,8 @@ void UI::authorize()
 	//user = lf->getUser();
 	delete lf;
 	lf = nullptr;
+	std::cout << "Authorized!!!\n";
+	
 }
 
 UI::~UI()
