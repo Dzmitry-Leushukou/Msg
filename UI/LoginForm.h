@@ -14,10 +14,7 @@ private:
 	std::string username();
 	std::string password();
 	std::string getMethod();
-	bool verified(std::string);
-	bool exist(std::string);
-	bool correct(std::string, std::string);	
 
-	Application* app;
+	Application* app=nullptr;
 };
 

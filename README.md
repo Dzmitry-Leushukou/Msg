@@ -8,7 +8,7 @@ Ability to create chat with other user(s). The chat is created only when all use
 * **Chat update** <br>
 Updating chat information when a new message arrives.<br>
 * **Registration** <br>
-To register you only need a login and password<br>P.S.<br> Login - unique sequence of characters<br> Password - sequence of at least 4 characters
+To register you only need a login and password<br>P.S.<br> Login - unique sequence of characters<br> Password - sequence of at least 8 characters
 * **Decryption** <br>
 Decryption keys are stored locally by each user<br>
 * **Encryption** <br>

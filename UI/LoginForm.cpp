@@ -15,12 +15,12 @@ void LoginForm::start()
 		std::string method = getMethod();
 		signView({login,pass,method});
 		try {
-			if (method == "login" && correct(login, pass) && verified(login))
+			if (method == "login")
 			{
 				app->loginUser(login, pass);
 				return;
 			}
-			if (method == "register" && !exist(login))
+			if (method == "register")
 			{
 				app->regUser(login, pass);
 				return;
@@ -47,30 +47,20 @@ void LoginForm::main()
 	clearScreen();
 	std::cout << "To sign in or registration write next data:\n";
 }
+
 std::string LoginForm::username()
 {
 	return getString("Write username: ");
 }
+
 std::string LoginForm::password()
 {
 	return getString("Write password: ",4);
 }
+
 std::string LoginForm::getMethod()
 {
 	if (getInt("Choose login method:\n1. Sign in\n2. Register\nMethod: ", 1, 2) == 1)
 		return "login";
 	return "register";	
-}
-
-bool LoginForm::verified(std::string login)
-{
-	return false;
-}
-bool LoginForm::exist(std::string login)
-{
-	return true;
-}
-bool LoginForm::correct(std::string login, std::string pass)
-{
-	return false;
 }

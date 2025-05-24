@@ -14,8 +14,6 @@ Application::Application()
 {
 	client = new Client();
 	this->curMAC = client->getMAC();
-	std::cout << curMAC<<'\n';
-	system("pause");
 }
 
 void Application::setUser(std::string login)
@@ -23,11 +21,10 @@ void Application::setUser(std::string login)
 	this->user = new User(login);
 }
 
-void Application::regUser(std::string login, std::string password)
+void Application::regUser(const std::string login, const std::string password)
 {
-	//create account (create table && verified current pc)
 	client->registerUser(login, password, {curMAC});
-	loginUser(login, password);
+	//loginUser(login, password);
 	//regen private key
 }
 
