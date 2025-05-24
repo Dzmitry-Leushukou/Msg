@@ -1,0 +1,28 @@
+#pragma once
+
+#ifdef MSG_EXPORTS
+#define EXP __declspec(dllexport)
+#else
+#define EXP __declspec(dllimport)
+#endif
+
+#include "User.h"
+#include "Client.h"
+#include "Utils.h"
+
+class EXP Application
+{
+public:
+	Application();		
+	~Application();
+	void setUser(std::string login);
+	void regUser(std::string login, std::string password);
+	void loginUser(std::string login, std::string password);
+	bool authorized() const;
+private:
+
+	User* user = nullptr;
+	std::string curMAC;
+	Client* client = nullptr;
+};
+

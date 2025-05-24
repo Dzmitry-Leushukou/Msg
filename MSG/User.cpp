@@ -1,18 +1,15 @@
 #include "User.h"
 
-User::User(std::string login, std::string password) : name(login)
+User::User(std::string login) : username(login)
 {
-	///genKeys()
+	
+}
+void User::setPublicKey(std::string public_key)
+{
+	this->pub = public_key;
 }
 
-User::User(std::string login, std::vector<std::string> data) : name(login)
+std::string User::getPublicKey() const
 {
-	///getKeys?
-	chatsId = data;
-}	
-
-std::vector<std::string> User::getChatsId() const
-{
-	return chatsId;
+	return pub;
 }
-

@@ -1,15 +1,17 @@
 #pragma once
 
 #include <iostream>
-#include "User.h"
+#include "Application.h"
 #include "LoginForm.h"
 
 class UI
 {
 public:
+	~UI();
 	void start();
 private:
 	void authorize();
-	User* user = nullptr;
+	
+	Application* app = new Application();
 };
 

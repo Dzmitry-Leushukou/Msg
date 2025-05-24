@@ -1,20 +1,15 @@
 #include "Client.h"
 
-int Client::port = 0;
-std::string Client::ip = "";
-SOCKET Client::sock = INVALID_SOCKET;
-sockaddr_in Client::serv_addr;
-
-void Client::init(std::string filepath)
+Client::Client()
 {
 	try
 	{
 		std::ifstream fin(filepath);
 		std::string s;
 	
-		if (fin >> s)
+		if (std::getline(fin, s))
 		{
-			ip = s;
+			api = s;
 		}
 		else 
 		{
@@ -22,174 +17,48 @@ void Client::init(std::string filepath)
 			throw std::invalid_argument("Invalid config file"); 
 		}
 
-		if (fin >> s)
+		if (std::getline(fin, s))
 		{
 			fin.close();
-			port = stoi(s);
+			proj_id = s;
 		}
 		else
 		{
 			fin.close();
 			throw std::invalid_argument("Invalid config file");
 		}
-		
 	}
 	catch (...)
 	{
 		throw std::invalid_argument("Invalid config file");
 	}
-
-	connectToServer();
+	Crypto::init();
 }
 
-void Client::connectToServer()
+std::vector<unsigned char> Client::registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs)
 {
-	WSADATA wsaData;
-	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+	/*
+	if (getUserDocument(username)) 
 	{
-		throw std::runtime_error("WSAStartup failed");
+		throw std::invalid_argument("Username \""+username+"\" already used");
 	}
+	*/
+	std::vector<unsigned char> private_key, public_key;
+	Crypto::generateKeyPair(macs, private_key, public_key);
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	if (sock == INVALID_SOCKET)
-	{
-		WSACleanup();
-		throw std::runtime_error("Failed to create socket");
-	}
+	json user_data = {
+		{"password", Crypto::hashPassword(password)},
+		{"public_key", Crypto::base64Encode(public_key)},
+		{"allowed_macs", macs},
+		{"requests", json::array()},  
+		{"chat_invites", json::array()},
+		{"chatsId", json::array()}
+	};
 
-	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_port = htons(port);
-
-	if (inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr) <= 0) {
-		closesocket(sock);
-		WSACleanup();
-		throw std::runtime_error("Invalid IP address");
-	}
-
-	if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == SOCKET_ERROR) {
-		closesocket(sock);
-		WSACleanup();
-		throw std::runtime_error("Failed to connect to the server");
-	}
+	if (!saveToFirestore("users", username, user_data))
+		throw std::runtime_error("Can`t acces to server");
+	return private_key;
 }
-
-void Client::sendMessage(const std::string& message) 
-{
-	if (send(sock, message.c_str(), message.length(), 0) == SOCKET_ERROR)
-	{
-		throw std::runtime_error("Failed to connect the server: " + std::to_string(WSAGetLastError()));
-	}
-}
-
-std::string Client::receiveMessage()
-{
-	char buffer[1024] = { 0 };
-	int bytesReceived = recv(sock, buffer, sizeof(buffer), 0);
-
-	if (bytesReceived == SOCKET_ERROR) 
-	{
-		throw std::runtime_error("Failed to connect the server: " + std::to_string(WSAGetLastError()));
-	}
-
-	return std::string(buffer, bytesReceived);
-}
-
-void Client::closeConnection() 
-{
-	if (sock != INVALID_SOCKET) 
-	{
-		if (closesocket(sock) == SOCKET_ERROR) 
-		{
-			throw std::runtime_error("Failed to close socket: " + std::to_string(WSAGetLastError()));
-		}
-		sock = INVALID_SOCKET; 
-	}
-	WSACleanup(); 
-}
-
-bool Client::userExist(std::string username, std::string password)
-{
-	sendMessage(username + " " + password + " ?");
-	std::string answer = receiveMessage();
-	return stoi(answer);
-}
-
-int Client::checkDevice()
-{
-	sendMessage(getMAC() + " ?");
-	std::string answer = receiveMessage();
-	return stoi(answer);
-}
-
-std::vector<std::string> Client::getUserData(std::string login)
-{
-	sendMessage(login);
-	std::vector<std::string>data;
-	while (true)
-	{
-		std::string s = receiveMessage();
-		if (s != "...end...")
-			data.push_back(s);
-		else
-			return data;
-	}
-}
-
-std::string Client::getChatHeader(std::string id)
-{
-	sendMessage(id + " h?");
-	return receiveMessage();
-}
-
-std::vector<std::unique_ptr<Message>> Client::getMessages(std::string chatID,std::string time)
-{
-	sendMessage(chatID + " " + time + " m?");
-	std::vector<std::unique_ptr<Message>>msg;
-	while (true)
-	{
-		std::string r = receiveMessage();
-		if (r == "...end...")
-			return msg;
-		std::string type = receiveMessage();
-		std::string data = receiveMessage();
-		std::string time = receiveMessage();
-		if (type == "image") 
-		{
-			std::string format = receiveMessage();
-			msg.push_back(std::make_unique<Image>(r,type,Crypto::decrypt(data),time));
-				continue;
-		}
-		msg.push_back(std::make_unique<Text>(r, Crypto::decrypt(data),time));
-	}
-
-}
-
-void Client::deleteChat(std::string id)
-{
-	sendMessage(id + " -");
-}
-
-void Client::sendMessage(std::string id, std::string sender, std::string type, std::string data, std::string format)
-{
-	sendMessage(id + " " + sender + " " + type + " " + data + " " + format + " m+");
-}
-
-void Client::sendVerifyRequest(std::string login)
-{
-	sendMessage(login + " " + getMAC() + " +");
-}
-
-void Client::addUser(std::string login, std::string password,
-					 std::string publicKey, std::string privateKey)
-{
-	sendMessage(login + " " + password + " " + publicKey + " " + privateKey + " u+");
-}
-
-void Client::verifyDevice(std::string login, std::string address, bool verdict)
-{
-	sendMessage(login + " " + address + " " + std::to_string(verdict) + " v+");
-}
-
 std::string Client::getMAC()
 {
 	ULONG bufferSize = 0;
@@ -207,7 +76,7 @@ std::string Client::getMAC()
 			{
 				if (i > 0) 
 				{
-					macAddressStream << "-";
+					macAddressStream << ":";
 				}
 				macAddressStream << std::hex << static_cast<int>(pCurrAddresses->PhysicalAddress[i]);
 			}
@@ -217,43 +86,80 @@ std::string Client::getMAC()
 	throw std::runtime_error("Can`t getting MAC address");
 }
 
-void Client::sentInvite(std::string sender, std::string receiverId,std::string chatID)
+bool Client::checkMacAddress(const json& allowed_macs, const std::string& mac)
 {
-	sendMessage(sender + " " + receiverId + chatID +" i+");
+	return any_of(allowed_macs.begin(), allowed_macs.end(),
+		[&mac](const auto& m) { return m == mac; });
 }
 
-std::pair<std::string,std::string> Client::getInvite(std::string id)
+bool Client::saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data)
 {
-	sendMessage(id + " i?");
-	std::string sender = receiveMessage();
-	if (sender == "...end...")
-		return {"",""};
-	std::string idOfChat = receiveMessage();
-	if (idOfChat == "...end...")
-		return { sender,"" };
-	return { sender,idOfChat};
-}
-void Client::createChat(std::string sender, std::string id,std::string chat)
-{
-	if (chat == "")
+	
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id + "/databases/(default)/documents/" + collection + "/" + doc_id + "?key=" + api;
+
+	json firestore_doc;
+	firestore_doc["fields"] = json::object();
+
+	for (auto& [key, value] : data.items())
 	{
-		sendMessage(sender + " c+");
-	}
-	sendMessage(id +" " + chat + " ac+");
 
-}
-std::string Client::getDevice(std::string id)
-{
-	sendMessage(id + " d?");
-	std::string ans = receiveMessage();
-	if (ans == "...end...")
+		if (key == "chat_invites")
+		{
+			json invites_array;
+			for (auto& invite : value)
+			{
+				json invite_map;
+				invite_map["mapValue"] = {
+					{"fields", {
+						{"chat_id", {{"stringValue", invite["chat_id"]}},
+						{"sender", {{"stringValue", invite["sender"]}}
+					}}
+				}} };
+				invites_array.push_back(invite_map);
+			}
+			firestore_doc["fields"][key] = { {"arrayValue", {{"values", invites_array}}} };
+		}
+		else if (value.is_array())
+		{
+			json array_values;
+			for (auto& item : value) {
+				array_values.push_back({ {"stringValue", item} });
+			}
+			firestore_doc["fields"][key] = { {"arrayValue", {{"values", array_values}}} };
+		}
+		else if (value.is_string())
+		{
+			firestore_doc["fields"][key] = { {"stringValue", value} };
+		}
+	}
+
+	curl = curl_easy_init();
+	std::string json_data = firestore_doc.dump();
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	if (res != CURLE_OK)
 	{
-		return "";
+		std::cerr << "CURL error: " << curl_easy_strerror(res) << std::endl;
+		return false;
 	}
-	return ans;
-}
 
-void Client::deleteUser(std::string id)
-{
-	sendMessage(id + " u-");
+	if (http_code != 200) {
+		std::cerr << "Firestore error. HTTP code: " << http_code << std::endl;
+		return false;
+	}
+
+	return true;
 }

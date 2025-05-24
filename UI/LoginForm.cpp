@@ -1,33 +1,46 @@
 #include "LoginForm.h"
 
+LoginForm::LoginForm(Application & app)
+{
+	this->app = &app;
+}
+
 void LoginForm::start()
 {
-	while (!user)
+	while (true)
 	{
 		main();
 		std::string login = username();
 		std::string pass =  password();
 		std::string method = getMethod();
-		if (method=="login" && correct(login,pass)&&verified(login))
-		{
-			user = new User(login, pass);
-			return;
+		signView({login,pass,method});
+		try {
+			if (method == "login" && correct(login, pass) && verified(login))
+			{
+				app->loginUser(login, pass);
+				return;
+			}
+			if (method == "register" && !exist(login))
+			{
+				app->regUser(login, pass);
+				return;
+			}
 		}
-		if (method == "register" && !exist(login))
+		catch (const std::exception& e)
 		{
-			user = new User(login, pass);
-			return;
+			clearScreen();
+			std::cout << e.what();
 		}
 		std::cout << "Something went wrong try again...\n";
 		pause();
 	}
 }
 
-User* LoginForm::getUser() const
+void LoginForm::signView(std::vector<std::string>v)
 {
-	return user;
+	clearScreen();
+	std::cout << "Try " << v.at(2) << "...\nLogin: " << v.at(0) << "\nPassword: " << v.at(1) << '\n';
 }
-
 
 void LoginForm::main()
 {

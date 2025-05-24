@@ -7,6 +7,7 @@ class Page
 {
 public:
 	virtual ~Page() {};
+	virtual void start() = 0;
 protected:
 	//Input methods
 	int getInt(std::string,int min,int max);

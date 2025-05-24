@@ -1,13 +1,14 @@
 #pragma once
 
 #include <WinSock2.h>
-#include <WS2tcpip.h>
 #include <iphlpapi.h>
 #include <string>
 #include <vector>
 #include <stdexcept>
 #include <fstream>
 #include <sstream>
+#include <curl/curl.h>
+#include <nlohmann/json.hpp>
 
 #include "Image.h"
 #include "Text.h"
@@ -16,38 +17,22 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "iphlpapi.lib")
 
+using json = nlohmann::json;
+
 class Client
 {
 public:
-	static void init(std::string filepath="config");
-	static std::string getMAC();
+	Client();
+	std::string getMAC();
 	//Requests
-	static bool userExist(std::string,std::string);
-	static int checkDevice();
-	static std::vector<std::string> getUserData(std::string);
-	static void sendVerifyRequest(std::string);
-	static void addUser(std::string, std::string, std::string, std::string);
-	static void verifyDevice(std::string, std::string, bool);
-	static std::string getChatHeader(std::string);
-	static std::vector<std::unique_ptr<Message>> getMessages(std::string, std::string time = "00/00/0000/00/00/00");
-	static void deleteChat(std::string id);
-	static void sendMessage(std::string id,std::string sender, std::string type, std::string data, std::string format ="");
-	static void sentInvite(std::string sender, std::string receiverId, std::string chatID="");
-	static std::pair<std::string,std::string> getInvite(std::string id);
-	static void createChat(std::string, std::string, std::string id = "");
-	static std::string getDevice(std::string);
-	static void deleteUser(std::string);
-	
+	std::vector<unsigned char> registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs);
+    bool saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data); 
+
 private:
-	static int port;
-	static std::string ip;
-	static SOCKET sock;
-	static sockaddr_in serv_addr;
-
-	static void sendMessage(const std::string& message);
-	static std::string receiveMessage();
-	static void connectToServer();
-	static void closeConnection();
-
+	bool checkMacAddress(const json& allowed_macs, const std::string& mac);
+	std::string api;
+	std::string proj_id;
+	CURL* curl = nullptr;
+	const std::string filepath = "D:\\Programming\\Projects\\MSG\\x64\\config";
 };
 
