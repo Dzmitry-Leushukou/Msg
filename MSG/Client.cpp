@@ -1,37 +1,9 @@
 #include "Client.h"
 
-Client::Client()
+Client::Client(std::string api, std::string pid)
 {
-	try
-	{
-		std::ifstream fin(filepath);
-		std::string s;
-	
-		if (std::getline(fin, s))
-		{
-			api = s;
-		}
-		else 
-		{
-			fin.close();
-			throw std::invalid_argument("Invalid config file"); 
-		}
-
-		if (std::getline(fin, s))
-		{
-			fin.close();
-			proj_id = s;
-		}
-		else
-		{
-			fin.close();
-			throw std::invalid_argument("Invalid config file");
-		}
-	}
-	catch (...)
-	{
-		throw std::invalid_argument("Invalid config file");
-	}
+	this->api = api;
+	this->proj_id = pid;
 	Crypto::init();
 }
 

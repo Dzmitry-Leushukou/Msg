@@ -12,7 +12,9 @@ Application::~Application()
 
 Application::Application()
 {
-	client = new Client();
+	std::vector<std::string>tmpData = FileService::getConfigInfo(3);
+	this->skey_path = tmpData.at(2);
+	client = new Client(tmpData.at(0), tmpData.at(1));
 	this->curMAC = client->getMAC();
 }
 
@@ -23,7 +25,7 @@ void Application::setUser(std::string login)
 
 void Application::regUser(const std::string login, const std::string password)
 {
-	client->registerUser(login, password, {curMAC});
+	FileService::saveToFile(skey_path,Utils::to_string(client->registerUser(login, password, {curMAC})));
 	//loginUser(login, password);
 	//regen private key
 }

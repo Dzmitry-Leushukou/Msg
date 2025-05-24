@@ -8,6 +8,7 @@
 
 #include "User.h"
 #include "Client.h"
+#include "FileService.h"
 #include "Utils.h"
 
 class EXP Application
@@ -24,5 +25,6 @@ private:
 	User* user = nullptr;
 	std::string curMAC;
 	Client* client = nullptr;
+	std::string skey_path;
 };
 

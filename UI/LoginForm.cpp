@@ -55,7 +55,7 @@ std::string LoginForm::username()
 
 std::string LoginForm::password()
 {
-	return getString("Write password: ",4);
+	return getString("Write password: ",8);
 }
 
 std::string LoginForm::getMethod()

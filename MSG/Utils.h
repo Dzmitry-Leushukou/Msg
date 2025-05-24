@@ -5,10 +5,7 @@
 class Utils
 {
 	public:
-		static std::vector<unsigned char>MACsToUCharVector(std::vector<std::string> MACs);
-
+		static std::string to_string(std::vector<unsigned char>);
 	private:
-		static std::vector<unsigned char> parseMAC(const std::string& mac_str);
 
 };
-

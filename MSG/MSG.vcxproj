@@ -138,20 +138,24 @@
     <ClCompile Include="Chat.cpp" />
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="FileService.cpp" />
     <ClCompile Include="Image.cpp" />
     <ClCompile Include="Message.cpp" />
     <ClCompile Include="Text.cpp" />
     <ClCompile Include="User.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Chat.h" />
     <ClInclude Include="Crypto.h" />
     <ClInclude Include="Client.h" />
+    <ClInclude Include="FileService.h" />
     <ClInclude Include="Image.h" />
     <ClInclude Include="Message.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="User.h" />
+    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

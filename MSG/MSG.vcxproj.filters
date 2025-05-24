@@ -36,6 +36,12 @@
     <ClCompile Include="Application.cpp">
       <Filter>Application</Filter>
     </ClCompile>
+    <ClCompile Include="FileService.cpp">
+      <Filter>Services</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Services</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Chat.h">
@@ -61,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="Application.h">
       <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="FileService.h">
+      <Filter>Services</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Services</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

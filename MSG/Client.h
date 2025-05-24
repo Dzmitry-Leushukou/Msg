@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include <fstream>
 #include <sstream>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
@@ -22,7 +21,7 @@ using json = nlohmann::json;
 class Client
 {
 public:
-	Client();
+	Client(std::string,std::string);
 	std::string getMAC();
 	//Requests
 	std::vector<unsigned char> registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs);
@@ -33,6 +32,5 @@ private:
 	std::string api;
 	std::string proj_id;
 	CURL* curl = nullptr;
-	const std::string filepath = "D:\\Programming\\Projects\\MSG\\x64\\config";
 };
 
