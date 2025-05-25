@@ -28,8 +28,13 @@ void MainMenu::inputHandler()
 	std::getline(std::cin, s);
 	if (s == "c")
 	{
-			
-	}else
+		CreateChatForm* cc = new CreateChatForm(*app);
+		cc->start();
+		app->createChat(cc->getName());
+		delete cc;
+		cc = nullptr;
+;	}
+	else
 	if (s == "r")
 	{
 
@@ -42,6 +47,8 @@ void MainMenu::inputHandler()
 	else
 	if (s == "d")
 	{
+		clearScreen();
+		std::cout << "Clean your soul. Just wait :)\n";
 		app->deleteUser();
 	}
 	else

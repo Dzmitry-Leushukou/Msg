@@ -16,12 +16,13 @@ class EXP Application
 public:
 	Application();		
 	~Application();
-	void setUser(std::string login);
-	void regUser(std::string login, std::string password);
-	void loginUser(std::string login, std::string password);
+	void setUser(const std::string& login);
+	void regUser(const std::string& login, const std::string& password);
+	void loginUser(const std::string& login, const std::string& password);
 	bool authorized() const;
 	std::vector<std::string> getChatHeaders();
 	void deleteUser();
+	void createChat(const std::string& chatName);
 private:
 
 	User* user = nullptr;

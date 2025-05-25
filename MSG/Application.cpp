@@ -16,13 +16,13 @@ Application::Application()
 	this->curMAC = client->getMAC();
 }
 
-void Application::regUser(const std::string login, const std::string password)
+void Application::regUser(const std::string& login, const std::string& password)
 {
 	client->registerUser(login, password, {curMAC});
 	loginUser(login, password);
 }
 
-void Application::loginUser(const std::string login, const std::string password)
+void Application::loginUser(const std::string& login, const std::string& password)
 {
 	client->loginUser(login, password, curMAC);
 	user = new User(login);
@@ -43,4 +43,9 @@ void Application::deleteUser()
 	client->deleteUser(user->getUsername());
 	delete user;
 	user = nullptr;
+}
+
+void Application::createChat(const std::string& chatName)
+{
+	client->createChat(chatName,user->getUsername());
 }

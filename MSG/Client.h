@@ -34,7 +34,11 @@ public:
 	void deleteUser(const std::string& username);
 	void deleteChat(const std::string& id);
 	void updateChatUserAmount(const std::string& id, const std::string& kol);
+	void createChat(const std::string& chatName, const std::string& username);
+	bool isChatExists(const std::string& id);
+	void addChat(const std::string& id, const std::string& username);
 private:
+	std::string findChatsId();
 	void decreaseChatUsers(const std::string& id);
 	json getUserDocument(const std::string& username);
 	static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);

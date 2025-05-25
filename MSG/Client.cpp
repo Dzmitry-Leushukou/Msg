@@ -32,19 +32,17 @@ std::vector<std::string> Client::getHeaders(const std::string& username)
 	json Ids = getUserField(username, "chatsId");
 	for (auto& id : Ids["arrayValue"]["values"]) 
 	{
-		json header = getChatField(id, "name");
+		json header = getChatField(id["stringValue"], "name");
 		headers.push_back(header["stringValue"]);
 	}
 	return headers;
 }
 
-void Client::registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs)
-{
-	if (isUsernameExists(username))
-	{
-		throw std::invalid_argument("Username \""+username+"\" already exist\n");
+void Client::registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs) {
+	if (isUsernameExists(username)) {
+		throw std::invalid_argument("Username \"" + username + "\" already exists\n");
 	}
-	
+
 	std::vector<unsigned char> private_key, public_key;
 	Crypto::generateKeyPair(macs, private_key, public_key);
 
@@ -52,13 +50,14 @@ void Client::registerUser(const std::string& username, const std::string& passwo
 		{"password", Crypto::hashPassword(password)},
 		{"public_key", Crypto::base64Encode(public_key)},
 		{"allowed_macs", macs},
-		{"requests", json::array()},  
+		{"requests", json::array()},
 		{"chat_invites", json::array()},
 		{"chatsId", json::array()}
 	};
 
-	if (!saveToFirestore("users", username, user_data))
-		throw std::runtime_error("Can`t acces to server\n");
+	if (!saveToFirestore("users", username, user_data)) {
+		throw std::runtime_error("Failed to register user\n");
+	}
 }
 
 std::string Client::getMAC()
@@ -102,75 +101,72 @@ bool Client::isMacAllowed(const std::string& username, const std::string& target
 
 bool Client::saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data)
 {
-	
-	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id + "/databases/(default)/documents/" + collection + "/" + doc_id + "?key=" + api;
+	CURL* curl = curl_easy_init();
+	if (!curl) return false;
 
+	
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/" + collection +
+		"?documentId=" + doc_id + "&key=" + api;
+
+	
 	json firestore_doc;
 	firestore_doc["fields"] = json::object();
 
-	for (auto& [key, value] : data.items())
-	{
-
-		if (key == "chat_invites")
-		{
+	for (const auto& [key, value] : data.items()) {
+		if (key == "chat_invites") {
 			json invites_array;
-			for (auto& invite : value)
-			{
+			for (const auto& invite : value) {
 				json invite_map;
 				invite_map["mapValue"] = {
 					{"fields", {
-						{"chat_id", {{"stringValue", invite["chat_id"]}},
-						{"sender", {{"stringValue", invite["sender"]}}
+						{"chat_id", {{"stringValue", invite["chat_id"].get<std::string>()}}},
+						{"sender", {{"stringValue", invite["sender"].get<std::string>()}}
 					}}
-				}} };
+				}};
 				invites_array.push_back(invite_map);
+				}
+				firestore_doc["fields"][key] = { {"arrayValue", {{"values", invites_array}}} };
 			}
-			firestore_doc["fields"][key] = { {"arrayValue", {{"values", invites_array}}} };
-		}
-		else if (value.is_array())
-		{
+		else if (value.is_array()) {
 			json array_values;
-			for (auto& item : value) {
+			for (const auto& item : value) {
 				array_values.push_back({ {"stringValue", item} });
 			}
 			firestore_doc["fields"][key] = { {"arrayValue", {{"values", array_values}}} };
 		}
-		else if (value.is_string())
-		{
-			firestore_doc["fields"][key] = { {"stringValue", value} };
+		else if (value.is_string()) {
+			firestore_doc["fields"][key] = { {"stringValue", value.get<std::string>()} };
 		}
+		}
+	
+		
+		struct curl_slist* headers = nullptr;
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+
+		
+		std::string json_data = firestore_doc.dump();
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+		
+		CURLcode res = curl_easy_perform(curl);
+		long http_code = 0;
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+		
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+
+		
+		if (http_code != 200) {
+			return false;
+		}
+
+		return true;
 	}
-
-	curl = curl_easy_init();
-	std::string json_data = firestore_doc.dump();
-	struct curl_slist* headers = nullptr;
-	headers = curl_slist_append(headers, "Content-Type: application/json");
-
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-	CURLcode res = curl_easy_perform(curl);
-	long http_code = 0;
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-
-	curl_slist_free_all(headers);
-	curl_easy_cleanup(curl);
-
-	if (res != CURLE_OK)
-	{
-		std::cerr << "CURL error: " << curl_easy_strerror(res) << std::endl;
-		return false;
-	}
-
-	if (http_code != 200) {
-		std::cerr << "Firestore error. HTTP code: " << http_code << std::endl;
-		return false;
-	}
-
-	return true;
-}
 
 json Client::getUserDocument(const std::string& username)
 {
@@ -244,7 +240,7 @@ bool Client::isUsernameExists(const std::string& username)
 		throw std::runtime_error("Can`t acces to server\n");
 	}
 
-	return (http_code == 200); // 200 = пользователь существует
+	return (http_code == 200);
 }
 
 json Client::getUserField(const std::string& username, const std::string& field)
@@ -298,7 +294,6 @@ json Client::getChatField(const std::string& chatId, const std::string& field)
 }
 
 void Client::addMAC(const std::string& username, const std::string& mac) {
-
 	CURL* curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("CURL initialization failed");
@@ -310,22 +305,22 @@ void Client::addMAC(const std::string& username, const std::string& mac) {
 		"?updateMask.fieldPaths=requests&key=" + api;
 	curl_free(escaped_username);
 
-	json user_data = getUserDocument(username);
+	
+	
+	json requests_field = getUserField(username, "requests");
 	std::vector<std::string> requests;
-
-	if (user_data.contains("requests") && user_data["requests"].contains("arrayValue")) {
-		for (const auto& item : user_data["requests"]["arrayValue"]["values"]) {
-			if (item.contains("stringValue")) {
-				requests.push_back(item["stringValue"].get<std::string>());
-			}
+	if (!requests_field.empty() && requests_field.contains("arrayValue")) {
+		for (const auto& item : requests_field["arrayValue"]["values"]) {
+			requests.push_back(item["stringValue"].get<std::string>());
 		}
 	}
-
+	
 	if (std::find(requests.begin(), requests.end(), mac) != requests.end()) {
 		return;
 	}
+	requests.push_back(mac);
 
-	
+
 	json body = {
 		{"fields", {
 			{"requests", {
@@ -336,21 +331,22 @@ void Client::addMAC(const std::string& username, const std::string& mac) {
 		}}
 	};
 
+
 	for (const auto& req : requests) {
 		body["fields"]["requests"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
 	}
-	body["fields"]["requests"]["arrayValue"]["values"].push_back({ {"stringValue", mac} });
+
 
 	struct curl_slist* headers = nullptr;
 	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
 
-	std::string request_body = body.dump();
-	//std::cout << "Request body:\n" << request_body << std::endl;
 
+	std::string request_body = body.dump();
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH"); // Используем PATCH вместо PUT
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
 
 	std::string response;
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -360,21 +356,21 @@ void Client::addMAC(const std::string& username, const std::string& mac) {
 	long http_code = 0;
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 
+
 	curl_slist_free_all(headers);
 	curl_easy_cleanup(curl);
 
+
 	if (http_code != 200) {
 		throw std::runtime_error(
-			"Server error (" + std::to_string(http_code) + "): " + response
-		);
+			"Server Error (" + std::to_string(http_code) + ")\n");
 	}
 }
-
 void Client::deleteUser(const std::string& username)
 {
 	json Ids = getUserField(username, "chatsId");
 	for (auto& id : Ids["arrayValue"]["values"])
-		decreaseChatUsers(id);
+		decreaseChatUsers(id["stringValue"]);
 	CURL* curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("CURL initialization failed");
@@ -417,6 +413,7 @@ void Client::deleteUser(const std::string& username)
 		);
 	}
 }
+
 void Client::decreaseChatUsers(const std::string& id)
 {
 	json amount = getChatField(id, "usersAmount");
@@ -454,34 +451,6 @@ void Client::updateChatUserAmount(const std::string& id, const std::string& kol)
 		}}
 	};
 
-	// 4. Настройка заголовков
-	struct curl_slist* headers = nullptr;
-	headers = curl_slist_append(headers, "Content-Type: application/json");
-
-	// 5. Выполнение запроса
-	std::string response;
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.dump().c_str());
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-	CURLcode res = curl_easy_perform(curl);
-	long http_code = 0;
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-
-	
-	curl_slist_free_all(headers);
-	curl_easy_cleanup(curl);
-
-	
-	if (http_code != 200) {
-		throw std::runtime_error(
-			"Failed to update amount of users. HTTP code: " + std::to_string(http_code) +
-			"\nResponse: " + response
-		);
-	}
 }
 
 void Client::deleteChat(const std::string& id)
@@ -497,7 +466,6 @@ void Client::deleteChat(const std::string& id)
 		"?key="+api;
 	curl_free(escaped_id);
 
-	// Настройка заголовков
 	struct curl_slist* headers = nullptr;
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 
@@ -525,5 +493,134 @@ void Client::deleteChat(const std::string& id)
 			"Failed to delete chat. HTTP code: " + std::to_string(http_code) +
 			"\nResponse: " + response
 		);
+	}
+}
+
+void Client::createChat(const std::string& name, const std::string& username)
+{
+	const std::string chatId = findChatsId();
+
+	
+	json user_data = {
+		{"name", name},
+		{"usersAmount","1"},
+		{"messages", json::array()},
+
+	};
+
+	if (!saveToFirestore("chats", chatId, user_data))
+		throw std::runtime_error("Can`t acces to server\n");
+	addChat(chatId, username);
+}
+
+std::string Client::findChatsId()
+{
+	long long id = 0;
+	while (id != LLONG_MAX)
+	{
+		if (isChatExists(std::to_string(id)))
+			id++;
+		else
+			return std::to_string(id);
+	}
+}
+
+bool Client::isChatExists(const std::string& id)
+{
+	CURL* curl = curl_easy_init();
+	std::string response;
+
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + this->proj_id + "/databases/(default)/documents/chats/" + id +
+		"?mask.fieldPaths=__name__&key=" + api;
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	curl_easy_cleanup(curl);
+
+	if (res != CURLE_OK)
+	{
+		throw std::runtime_error("Can`t acces to server\n");
+	}
+
+	return (http_code == 200);
+}
+
+void Client::addChat(const std::string& id, const std::string& username)
+{
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + std::string(escaped_username) +
+		"?updateMask.fieldPaths=chatsId&key=" + api;
+	curl_free(escaped_username);
+
+
+
+	json requests_field = getUserField(username, "chatsId");
+	std::vector<std::string> requests;
+	if (!requests_field.empty() && requests_field.contains("arrayValue")) {
+		for (const auto& item : requests_field["arrayValue"]["values"]) {
+			requests.push_back(item["stringValue"].get<std::string>());
+		}
+	}
+
+	if (std::find(requests.begin(), requests.end(), id) != requests.end()) {
+		return;
+	}
+	requests.push_back(id);
+
+
+	json body = {
+		{"fields", {
+			{"chatsId", {
+				{"arrayValue", {
+					{"values", json::array()}
+				}}
+			}}
+		}}
+	};
+
+
+	for (const auto& req : requests) {
+		body["fields"]["chatsId"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
+	}
+
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
+
+
+	std::string request_body = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH"); // Используем PATCH вместо PUT
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Server Error (" + std::to_string(http_code) + ")\n");
 	}
 }
