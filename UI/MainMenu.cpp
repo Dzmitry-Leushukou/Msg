@@ -47,7 +47,7 @@ void MainMenu::inputHandler()
 	else
 	if (s == "i")
 	{
-
+		//app->
 	}
 	else
 	if (s == "d")

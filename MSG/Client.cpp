@@ -651,6 +651,78 @@ void Client::addChat(const std::string& id, const std::string& username)
 		throw std::runtime_error(
 			"Server Error (" + std::to_string(http_code) + ")\n");
 	}
+
+	//add to chat
+	curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_id = curl_easy_escape(curl, id.c_str(), id.size());
+	url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/chats/" + std::string(escaped_id) +
+		"?updateMask.fieldPaths=users&key=" + api;
+	curl_free(escaped_id);
+
+
+
+	json users_field = getChatField(id, "users");
+	std::vector<std::string> users;
+	if (!users_field.empty() && users_field.contains("arrayValue")) {
+		for (const auto& item : users_field["arrayValue"]["values"]) {
+			users.push_back(item["stringValue"].get<std::string>());
+		}
+	}
+
+	if (std::find(users.begin(), users.end(), username) != users.end()) {
+		return;
+	}
+	users.push_back(username);
+
+
+	body = {
+		{"fields", {
+			{"users", {
+				{"arrayValue", {
+					{"values", json::array()}
+				}}
+			}}
+		}}
+	};
+
+
+	for (const auto& req : users) {
+		body["fields"]["users"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
+	}
+
+
+	headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
+
+
+	request_body = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH"); // Используем PATCH вместо PUT
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	res = curl_easy_perform(curl);
+	http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Server Error (" + std::to_string(http_code) + ")\n");
+	}
 }
 
 std::vector<std::string> Client::getRequests(const std::string& username)
@@ -851,9 +923,12 @@ void Client::updateTime(const std::string& username)
 
 bool Client::isUserOnline(const std::string& username)
 {
+	if(getUserField(username, "lastActive").empty())
+		return false;
 	time_t t = std::stoll(getUserField(username, "lastActive")["stringValue"].get<std::string>());
 	return nowTime() - t <= 5;
 }
+
 time_t Client::nowTime() const
 {
 	return time(nullptr);
