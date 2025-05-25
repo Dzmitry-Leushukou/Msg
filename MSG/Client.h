@@ -46,6 +46,7 @@ public:
 	std::pair<std::string,std::string> getInvite(const std::string& username);
 	std::string getChatName(const std::string& id);
 	void popInvite(const std::string& username);
+	bool userHasChatId(const std::string& username, const std::string& id);
 private:
 	std::string findChatsId();
 	void decreaseChatUsers(const std::string& id);

@@ -945,18 +945,27 @@ std::pair<std::string, std::string> Client::getInvite(const std::string& usernam
 		return { "", "" };
 	}
 
-	json first_invite = invites["arrayValue"]["values"][0];
-
-	std::string chat_id, sender;
-	try {
-		chat_id = first_invite["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>();
-		sender = first_invite["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
+	for (auto& i : invites["arrayValue"]["values"]) 
+	{
+		std::string chat_id = i["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>();
+		std::string sender = i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
+		if (userHasChatId(sender,chat_id))
+			return { i["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>(),i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>() };
 	}
-	catch (const json::exception&) {
-		return { "", "" };
-	}
+	return { "", "" };
+}
 
-	return { chat_id, sender };
+bool Client::userHasChatId(const std::string& username, const std::string& id)
+{
+	if (!isChatExists(id) || !isUsernameExists(username))
+		return false;
+	json Ids = getUserField(username, "chatsId");
+	for (auto& id : Ids["arrayValue"]["values"])
+	{
+		if(id["stringValue"] == id);
+		return true;
+	}
+	return false;
 }
 
 std::string Client::getChatName(const std::string& id)
