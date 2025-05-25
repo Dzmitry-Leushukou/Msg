@@ -35,5 +35,5 @@ bool Application::authorized() const
 
 std::vector<std::string> Application::getChatHeaders()
 {
-	return {};
+	return client->getHeaders(user->getUsername());
 }

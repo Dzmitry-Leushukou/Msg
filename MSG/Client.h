@@ -26,10 +26,11 @@ public:
 	//Requests
 	void registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs);
 	void loginUser(const std::string& username, const std::string& password, const std::string& current_mac);
-	std::vector<std::string> getHeaders(std::string& username);
+	std::vector<std::string> getHeaders(const std::string& username);
 	bool isUsernameExists(const std::string& username);
 	json getUserField(const std::string& username, const std::string& field);
-
+	json getChatField(const std::string& chatId, const std::string& field);
+	void addMAC(const std::string& username, const std::string& mac);
 private:
 	json getUserDocument(const std::string& username);
 	static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);

@@ -1,15 +1,12 @@
 #pragma once
 
 #include <string>
-#include <nlohmann/json.hpp>
-
-using json = nlohmann::json;
 
 class User
 {
 public:
 	User(std::string username) :username(username) { }
-
+	std::string getUsername()const;
 private:
 	const std::string username;
 };

@@ -10,6 +10,13 @@ void MainMenu::start()
 	{
 		clearScreen();
 		getHeaders();
+		std::cout << "===Chats===\n";
+		int id = 0;
+		for (auto& i : chatHeaders)
+		{
+			std::cout << id++ << ". " << i << '\n';
+		}
+
 	}
 }
 
