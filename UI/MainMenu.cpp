@@ -57,6 +57,13 @@ void MainMenu::inputHandler()
 		app->deleteUser();
 	}
 	else
+		if (s == "q")
+		{
+			clearScreen();
+			app->clearUser();
+			return;
+		}
+		else
 	if (Utils::isUInt(s))
 	{
 		
@@ -76,6 +83,7 @@ void MainMenu::help()
 	std::cout << "i | Show chat invites\n";
 	std::cout << "id | Open chat by id\n";
 	std::cout << "d | Delete account\n";
+	std::cout << "q | Go to login page\n";
 	std::cout << "--------------------------------\n";
 }
 

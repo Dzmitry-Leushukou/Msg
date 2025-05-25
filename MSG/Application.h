@@ -10,13 +10,14 @@
 #include "Client.h"
 #include "FileService.h"
 #include "Utils.h"
+#include <thread>
 
 class EXP Application
 {
 public:
 	Application();		
 	~Application();
-	void setUser(const std::string& login);
+	void clearUser();
 	void regUser(const std::string& login, const std::string& password);
 	void loginUser(const std::string& login, const std::string& password);
 	bool authorized() const;
@@ -26,11 +27,13 @@ public:
 	std::vector<std::string>getRequests();
 	void addAllowedMAC(const std::string& MAC);
 	void updateRequests(std::vector<std::string>q);
+	void updUserStatus();
 private:
 
 	User* user = nullptr;
 	std::string curMAC;
 	Client* client = nullptr;
 	std::string skey_path;
+	std::thread userOnline;
 };
 

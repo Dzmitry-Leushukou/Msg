@@ -28,6 +28,7 @@ public:
 	void loginUser(const std::string& username, const std::string& password, const std::string& current_mac);
 	std::vector<std::string> getHeaders(const std::string& username);
 	bool isUsernameExists(const std::string& username);
+	bool isUserOnline(const std::string& username);
 	json getUserField(const std::string& username, const std::string& field);
 	json getChatField(const std::string& chatId, const std::string& field);
 	void addMAC(const std::string& username, const std::string& mac);
@@ -40,6 +41,8 @@ public:
 	bool isChatExists(const std::string& id);
 	void addChat(const std::string& id, const std::string& username);
 	std::vector<std::string> getRequests(const std::string& username);
+	void updateTime(const std::string& username);
+	time_t nowTime() const;
 private:
 	std::string findChatsId();
 	void decreaseChatUsers(const std::string& id);

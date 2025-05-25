@@ -9,11 +9,13 @@ Client::Client(std::string api, std::string pid)
 
 void Client::loginUser(const std::string& username, const std::string& password, const std::string& current_mac)
 {
-	
 	if (!isUsernameExists(username))
 	{
 		throw std::invalid_argument("User not found\n");
 	}
+	if(isUserOnline(username))
+		throw std::invalid_argument("User already online\n");
+
 	if (!Crypto::verifyPassword(password, getUserField(username,"password")["stringValue"]))
 	{
 		throw std::invalid_argument("User not found\n");
@@ -451,7 +453,32 @@ void Client::updateChatUserAmount(const std::string& id, const std::string& kol)
 			}}
 		}}
 	};
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
 
+	std::string json_data = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+	
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Failed to update usersAmount. HTTP code: " +
+			std::to_string(http_code) + "\nResponse: " + response
+		);
+	}
 }
 
 void Client::deleteChat(const std::string& id)
@@ -771,4 +798,63 @@ void Client::setRequests(const std::string& username, std::vector<std::string>q)
 		throw std::runtime_error(
 			"Server Error (" + std::to_string(http_code) + ")\n");
 	}
+}
+
+void Client::updateTime(const std::string& username)
+{
+	std::string curTime = std::to_string(nowTime());
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_id = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + escaped_id +
+		"?updateMask.fieldPaths=lastActive&key=" + api;
+	curl_free(escaped_id);
+
+	json body = {
+		{"fields", {
+			{"lastActive", {
+				{"stringValue", curTime}
+			}}
+		}}
+	};
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	std::string json_data = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Failed to update usersAmount. HTTP code: " +
+			std::to_string(http_code) + "\nResponse: " + response
+		);
+	}
+}
+
+bool Client::isUserOnline(const std::string& username)
+{
+	time_t t = std::stoll(getUserField(username, "lastActive")["stringValue"].get<std::string>());
+	return nowTime() - t <= 5;
+}
+time_t Client::nowTime() const
+{
+	return time(nullptr);
 }

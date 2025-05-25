@@ -6,14 +6,16 @@ Application::~Application()
 	delete user;
 	user = nullptr;
 	client = nullptr;
+	userOnline.detach();
 }
 
-Application::Application()
+Application::Application():userOnline(&Application::updUserStatus, this)
 {
 	std::vector<std::string>tmpData = FileService::getConfigInfo(3);
 	this->skey_path = tmpData.at(2);
 	client = new Client(tmpData.at(0), tmpData.at(1));
 	this->curMAC = client->getMAC();
+	
 }
 
 void Application::regUser(const std::string& login, const std::string& password)
@@ -54,6 +56,7 @@ std::vector<std::string>Application::getRequests()
 {
 	return client->getRequests(user->getUsername());
 }
+
 void Application::addAllowedMAC(const std::string& MAC)
 {
 	client->addAllowedMAC(user->getUsername(),MAC);
@@ -62,4 +65,22 @@ void Application::addAllowedMAC(const std::string& MAC)
 void Application::updateRequests(std::vector<std::string>q)
 {
 	client->setRequests(user->getUsername(),q);
+}
+
+void Application::clearUser()
+{
+	delete user;
+	user = nullptr;
+}
+
+void Application::updUserStatus()
+{
+	while (true)
+	{
+		if (user)
+		{
+			client->updateTime(user->getUsername());
+		}
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+	}
 }
