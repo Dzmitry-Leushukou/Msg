@@ -8,11 +8,9 @@ using json = nlohmann::json;
 class User
 {
 public:
-	User(json data);
-	void setPublicKey(std::string);
-	std::string getPublicKey()const;
+	User(std::string username) :username(username) { }
+
 private:
-	std::string username;
-	std::string pub; 
+	const std::string username;
 };
 

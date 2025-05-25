@@ -3,7 +3,7 @@
 #include <iostream>
 #include "Application.h"
 #include "LoginForm.h"
-
+#include "MainMenu.h"
 class UI
 {
 public:

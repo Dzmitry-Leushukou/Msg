@@ -24,9 +24,8 @@ void Application::regUser(const std::string login, const std::string password)
 
 void Application::loginUser(const std::string login, const std::string password)
 {
-	std::pair<std::vector<unsigned char>, json>login_data = client->loginUser(login, password, curMAC);
-	FileService::saveToFile(skey_path, Utils::to_string(login_data.first));
-	user = new User(login_data.second);
+	client->loginUser(login, password, curMAC);
+	user = new User(login);
 }
 
 bool Application::authorized() const

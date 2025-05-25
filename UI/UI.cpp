@@ -5,8 +5,13 @@ void UI::start()
 	while (true)
 	{
 		if (!app->authorized())
+		{
 			authorize();
-
+		}
+		MainMenu* mm = new MainMenu(*app);
+		mm->start();
+		delete mm;
+		mm = nullptr;
 	}
 }
 
