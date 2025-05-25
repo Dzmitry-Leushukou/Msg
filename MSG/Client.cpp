@@ -933,3 +933,98 @@ time_t Client::nowTime() const
 {
 	return time(nullptr);
 }
+
+std::pair<std::string, std::string> Client::getInvite(const std::string& username)
+{
+	json invites = getUserField(username, "chat_invites");
+
+	if (!invites.contains("arrayValue") ||
+		!invites["arrayValue"].contains("values") ||
+		!invites["arrayValue"]["values"].is_array() ||
+		invites["arrayValue"]["values"].empty()) {
+		return { "", "" };
+	}
+
+	json first_invite = invites["arrayValue"]["values"][0];
+
+	std::string chat_id, sender;
+	try {
+		chat_id = first_invite["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>();
+		sender = first_invite["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
+	}
+	catch (const json::exception&) {
+		return { "", "" };
+	}
+
+	return { chat_id, sender };
+}
+
+std::string Client::getChatName(const std::string& id)
+{
+	return getChatField(id, "name");
+}
+
+void Client::popInvite(const std::string& username) {
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + std::string(escaped_username) +
+		"?updateMask.fieldPaths=chat_invites&key=" + api;
+	curl_free(escaped_username);
+
+	json invites = getUserField(username, "chat_invites");
+
+	if (!invites.contains("arrayValue") ||
+		!invites["arrayValue"].contains("values") ||
+		!invites["arrayValue"]["values"].is_array() ||
+		invites["arrayValue"]["values"].empty()) {
+		curl_easy_cleanup(curl);
+		return;
+	}
+
+	json new_array = json::array();
+	auto values = invites["arrayValue"]["values"];
+
+	for (size_t i = 1; i < values.size(); ++i) 
+	{ 
+		new_array.push_back(values[i]); 
+	}
+
+
+	json body = {
+		{"fields", {
+			{"chat_invites", {
+				{"arrayValue", {
+					{"values", new_array}
+				}}
+			}}
+		}}
+	};
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
+
+	std::string request_body = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+	CURLcode res = curl_easy_perform(curl);
+
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	if (http_code != 200) {
+		throw std::runtime_error("Server Error (" + std::to_string(http_code) + ")\n");
+	}
+}

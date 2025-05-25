@@ -1,11 +1,11 @@
 #pragma once
 #include "Page.h"
 #include <string>
-class RequestsMenu :
+class InvitesMenu :
     public Page
 {
 public:
-    RequestsMenu(Application& app);
+    InvitesMenu(Application& app);
     virtual void start() override;
 private:
     void help();

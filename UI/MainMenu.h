@@ -3,9 +3,11 @@
 #include "Utils.h"
 #include "CreateChatForm.h"
 #include "RequestsMenu.h"
+#include "InvitesMenu.h"
 #include <vector>
 #include <string>
 #include <iostream>
+
 class MainMenu : public Page
 {
 public:

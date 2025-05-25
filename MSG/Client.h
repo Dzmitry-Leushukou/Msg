@@ -43,6 +43,9 @@ public:
 	std::vector<std::string> getRequests(const std::string& username);
 	void updateTime(const std::string& username);
 	time_t nowTime() const;
+	std::pair<std::string,std::string> getInvite(const std::string& username);
+	std::string getChatName(const std::string& id);
+	void popInvite(const std::string& username);
 private:
 	std::string findChatsId();
 	void decreaseChatUsers(const std::string& id);

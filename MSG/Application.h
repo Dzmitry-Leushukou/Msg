@@ -28,6 +28,10 @@ public:
 	void addAllowedMAC(const std::string& MAC);
 	void updateRequests(std::vector<std::string>q);
 	void updUserStatus();
+	std::pair<std::string,std::string> getInvite();
+	std::string getChatName(const std::string& id)const;
+	void popInvite();
+	void acceptInvite(const std::string& id);
 private:
 
 	User* user = nullptr;

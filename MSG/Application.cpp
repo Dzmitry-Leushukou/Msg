@@ -84,3 +84,23 @@ void Application::updUserStatus()
 		std::this_thread::sleep_for(std::chrono::seconds(5));
 	}
 }
+
+std::pair<std::string, std::string> Application::getInvite()
+{
+	return client->getInvite(user->getUsername());
+}
+
+std::string Application::getChatName(const std::string& id)const
+{
+	return client->getChatName(id);
+}
+
+void Application::popInvite()
+{
+	client->popInvite(user->getUsername());
+}
+
+void Application::acceptInvite(const std::string& id)
+{
+	client->addChat(id, user->getUsername());
+}

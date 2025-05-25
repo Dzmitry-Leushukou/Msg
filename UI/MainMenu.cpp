@@ -47,7 +47,10 @@ void MainMenu::inputHandler()
 	else
 	if (s == "i")
 	{
-		//app->
+		InvitesMenu* rm = new InvitesMenu(*app);
+		rm->start();
+		delete rm;
+		rm = nullptr;
 	}
 	else
 	if (s == "d")
