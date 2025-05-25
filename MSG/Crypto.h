@@ -11,5 +11,6 @@ class Crypto
 		static std::string hashPassword(const std::string& password);
         static bool verifyPassword(const std::string& password, const std::string& hash);
         static std::string base64Encode(const std::vector<unsigned char>& data);
+		//static std::vector<unsigned char> genGroupKey();
 };
 

@@ -27,8 +27,8 @@ std::string Crypto::hashPassword(const std::string& password)
     std::vector<unsigned char> hash(crypto_pwhash_STRBYTES);
     crypto_pwhash_str(reinterpret_cast<char*>(hash.data()),
         password.c_str(), password.size(),
-        crypto_pwhash_OPSLIMIT_SENSITIVE,
-        crypto_pwhash_MEMLIMIT_SENSITIVE);
+        crypto_pwhash_OPSLIMIT_INTERACTIVE,
+        crypto_pwhash_MEMLIMIT_INTERACTIVE);
     return std::string(reinterpret_cast<char*>(hash.data()));
 }
 bool Crypto::verifyPassword(const std::string& password, const std::string& hash)
