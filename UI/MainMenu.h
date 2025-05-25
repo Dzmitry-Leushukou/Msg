@@ -2,6 +2,7 @@
 #include "Page.h"
 #include "Utils.h"
 #include "CreateChatForm.h"
+#include "RequestsMenu.h"
 #include <vector>
 #include <string>
 #include <iostream>

@@ -30,6 +30,8 @@ void MainMenu::inputHandler()
 	{
 		CreateChatForm* cc = new CreateChatForm(*app);
 		cc->start();
+		if (cc->getName() == "")
+			return;
 		app->createChat(cc->getName());
 		delete cc;
 		cc = nullptr;
@@ -37,7 +39,10 @@ void MainMenu::inputHandler()
 	else
 	if (s == "r")
 	{
-
+		RequestsMenu* rm = new RequestsMenu(*app);
+		rm->start();
+		delete rm;
+		rm = nullptr;
 	}
 	else
 	if (s == "i")

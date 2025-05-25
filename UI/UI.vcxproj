@@ -138,6 +138,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="Page.cpp" />
+    <ClCompile Include="RequestsMenu.cpp" />
     <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +146,7 @@
     <ClInclude Include="LoginForm.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="Page.h" />
+    <ClInclude Include="RequestsMenu.h" />
     <ClInclude Include="UI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

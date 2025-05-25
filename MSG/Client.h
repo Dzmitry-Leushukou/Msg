@@ -31,12 +31,15 @@ public:
 	json getUserField(const std::string& username, const std::string& field);
 	json getChatField(const std::string& chatId, const std::string& field);
 	void addMAC(const std::string& username, const std::string& mac);
+	void setRequests(const std::string& username, std::vector<std::string>q);
+	void addAllowedMAC(const std::string& username, const std::string& mac);
 	void deleteUser(const std::string& username);
 	void deleteChat(const std::string& id);
 	void updateChatUserAmount(const std::string& id, const std::string& kol);
 	void createChat(const std::string& chatName, const std::string& username);
 	bool isChatExists(const std::string& id);
 	void addChat(const std::string& id, const std::string& username);
+	std::vector<std::string> getRequests(const std::string& username);
 private:
 	std::string findChatsId();
 	void decreaseChatUsers(const std::string& id);

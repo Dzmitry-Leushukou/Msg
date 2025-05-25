@@ -49,3 +49,17 @@ void Application::createChat(const std::string& chatName)
 {
 	client->createChat(chatName,user->getUsername());
 }
+
+std::vector<std::string>Application::getRequests()
+{
+	return client->getRequests(user->getUsername());
+}
+void Application::addAllowedMAC(const std::string& MAC)
+{
+	client->addAllowedMAC(user->getUsername(),MAC);
+}
+
+void Application::updateRequests(std::vector<std::string>q)
+{
+	client->setRequests(user->getUsername(),q);
+}

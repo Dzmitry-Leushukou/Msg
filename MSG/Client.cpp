@@ -366,6 +366,7 @@ void Client::addMAC(const std::string& username, const std::string& mac) {
 			"Server Error (" + std::to_string(http_code) + ")\n");
 	}
 }
+
 void Client::deleteUser(const std::string& username)
 {
 	json Ids = getUserField(username, "chatsId");
@@ -592,6 +593,153 @@ void Client::addChat(const std::string& id, const std::string& username)
 
 	for (const auto& req : requests) {
 		body["fields"]["chatsId"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
+	}
+
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
+
+
+	std::string request_body = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH"); // Используем PATCH вместо PUT
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Server Error (" + std::to_string(http_code) + ")\n");
+	}
+}
+
+std::vector<std::string> Client::getRequests(const std::string& username)
+{
+	std::vector<std::string> requests;
+	json Ids = getUserField(username, "requests");
+	for (auto& id : Ids["arrayValue"]["values"])
+	{
+		requests.push_back(id["stringValue"]);
+	}
+	return requests;
+}
+
+void Client::addAllowedMAC(const std::string& username, const std::string& mac)
+{
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + std::string(escaped_username) +
+		"?updateMask.fieldPaths=allowed_macs&key=" + api;
+	curl_free(escaped_username);
+
+
+
+	json requests_field = getUserField(username, "allowed_macs");
+	std::vector<std::string> requests;
+	if (!requests_field.empty() && requests_field.contains("arrayValue")) {
+		for (const auto& item : requests_field["arrayValue"]["values"]) {
+			requests.push_back(item["stringValue"].get<std::string>());
+		}
+	}
+
+	if (std::find(requests.begin(), requests.end(), mac) != requests.end()) {
+		return;
+	}
+	requests.push_back(mac);
+
+
+	json body = {
+		{"fields", {
+			{"allowed_macs", {
+				{"arrayValue", {
+					{"values", json::array()}
+				}}
+			}}
+		}}
+	};
+
+
+	for (const auto& req : requests) {
+		body["fields"]["allowed_macs"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
+	}
+
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
+
+
+	std::string request_body = body.dump();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH"); // Используем PATCH вместо PUT
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Server Error (" + std::to_string(http_code) + ")\n");
+	}
+}
+
+void Client::setRequests(const std::string& username, std::vector<std::string>q)
+{
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + std::string(escaped_username) +
+		"?updateMask.fieldPaths=requests&key=" + api;
+	curl_free(escaped_username);
+
+	std::vector<std::string> requests=q;
+
+	json body = {
+		{"fields", {
+			{"requests", {
+				{"arrayValue", {
+					{"values", json::array()}
+				}}
+			}}
+		}}
+	};
+
+
+	for (const auto& req : requests) {
+		body["fields"]["requests"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
 	}
 
 

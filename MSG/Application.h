@@ -23,6 +23,9 @@ public:
 	std::vector<std::string> getChatHeaders();
 	void deleteUser();
 	void createChat(const std::string& chatName);
+	std::vector<std::string>getRequests();
+	void addAllowedMAC(const std::string& MAC);
+	void updateRequests(std::vector<std::string>q);
 private:
 
 	User* user = nullptr;
