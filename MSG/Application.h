@@ -21,6 +21,7 @@ public:
 	void loginUser(std::string login, std::string password);
 	bool authorized() const;
 	std::vector<std::string> getChatHeaders();
+	void deleteUser();
 private:
 
 	User* user = nullptr;

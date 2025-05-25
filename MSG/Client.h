@@ -31,7 +31,11 @@ public:
 	json getUserField(const std::string& username, const std::string& field);
 	json getChatField(const std::string& chatId, const std::string& field);
 	void addMAC(const std::string& username, const std::string& mac);
+	void deleteUser(const std::string& username);
+	void deleteChat(const std::string& id);
+	void updateChatUserAmount(const std::string& id, const std::string& kol);
 private:
+	void decreaseChatUsers(const std::string& id);
 	json getUserDocument(const std::string& username);
 	static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);
 	json parseFirestoreFields(const json& fields);

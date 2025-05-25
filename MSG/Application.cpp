@@ -37,3 +37,10 @@ std::vector<std::string> Application::getChatHeaders()
 {
 	return client->getHeaders(user->getUsername());
 }
+
+void Application::deleteUser()
+{
+	client->deleteUser(user->getUsername());
+	delete user;
+	user = nullptr;
+}

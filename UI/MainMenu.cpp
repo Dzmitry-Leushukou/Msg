@@ -6,18 +6,65 @@ MainMenu::MainMenu(Application& app)
 }
 void MainMenu::start()
 {
-	while (true)
+	while (app->authorized())
 	{
 		clearScreen();
 		getHeaders();
 		std::cout << "===Chats===\n";
-		int id = 0;
+		unsigned int id = 0;
 		for (auto& i : chatHeaders)
 		{
 			std::cout << id++ << ". " << i << '\n';
 		}
+		std::cout << "--------------------------------\n";
+		help();
+		inputHandler();
+	}
+}
+
+void MainMenu::inputHandler()
+{
+	std::string s;
+	std::getline(std::cin, s);
+	if (s == "c")
+	{
+			
+	}else
+	if (s == "r")
+	{
 
 	}
+	else
+	if (s == "i")
+	{
+
+	}
+	else
+	if (s == "d")
+	{
+		app->deleteUser();
+	}
+	else
+	if (Utils::isUInt(s))
+	{
+		
+	}
+	else
+	{
+		std::cout << "Wrong input. Try again\n";
+		system("pause");
+	}
+}
+
+void MainMenu::help()
+{
+	std::cout << "Command | Description\n";
+	std::cout << "c | Create chat\n";
+	std::cout << "r | Show MAC requests\n";
+	std::cout << "i | Show chat invites\n";
+	std::cout << "id | Open chat by id\n";
+	std::cout << "d | Delete account\n";
+	std::cout << "--------------------------------\n";
 }
 
 void MainMenu::getHeaders()

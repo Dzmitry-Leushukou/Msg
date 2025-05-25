@@ -369,3 +369,161 @@ void Client::addMAC(const std::string& username, const std::string& mac) {
 		);
 	}
 }
+
+void Client::deleteUser(const std::string& username)
+{
+	json Ids = getUserField(username, "chatsId");
+	for (auto& id : Ids["arrayValue"]["values"])
+		decreaseChatUsers(id);
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	
+	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/"+proj_id+
+		"/databases/(default)/documents/users/" + std::string(escaped_username) +
+		"?key="+api;
+	curl_free(escaped_username);
+
+	
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Failed to delete user. HTTP code: " + std::to_string(http_code) +
+			"\nResponse: " + response
+		);
+	}
+}
+void Client::decreaseChatUsers(const std::string& id)
+{
+	json amount = getChatField(id, "usersAmount");
+	std::string s = amount["stringValue"];
+	long long kol = std::stoll(s);
+	kol--;
+	if (kol <= 0)
+	{
+		deleteChat(id);
+	}
+	else
+	{
+		updateChatUserAmount(id, std::to_string(kol));
+	}
+}
+
+void Client::updateChatUserAmount(const std::string& id, const std::string& kol)
+{
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_id = curl_easy_escape(curl, id.c_str(), id.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/chats/" + escaped_id +
+		"?updateMask.fieldPaths=usersAmount&key=" + api;
+	curl_free(escaped_id);
+
+	json body = {
+		{"fields", {
+			{"usersAmount", {
+				{"stringValue", kol}
+			}}
+		}}
+	};
+
+	// 4. Настройка заголовков
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	// 5. Выполнение запроса
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.dump().c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Failed to update amount of users. HTTP code: " + std::to_string(http_code) +
+			"\nResponse: " + response
+		);
+	}
+}
+
+void Client::deleteChat(const std::string& id)
+{
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	char* escaped_id = curl_easy_escape(curl, id.c_str(), id.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/"+proj_id+
+		"/databases/(default)/documents/chats/" + std::string(escaped_id) +
+		"?key="+api;
+	curl_free(escaped_id);
+
+	// Настройка заголовков
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Failed to delete chat. HTTP code: " + std::to_string(http_code) +
+			"\nResponse: " + response
+		);
+	}
+}
