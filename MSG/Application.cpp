@@ -1,13 +1,11 @@
 #include "Application.h"
 
-
 Application::~Application()
 {
 	delete client;
 	delete user;
 	user = nullptr;
 	client = nullptr;
-
 }
 
 Application::Application()
@@ -18,16 +16,10 @@ Application::Application()
 	this->curMAC = client->getMAC();
 }
 
-void Application::setUser(std::string login)
-{
-	this->user = new User(login);
-}
-
 void Application::regUser(const std::string login, const std::string password)
 {
 	client->registerUser(login, password, {curMAC});
 	loginUser(login, password);
-	//regen private key
 }
 
 void Application::loginUser(const std::string login, const std::string password)
@@ -36,7 +28,13 @@ void Application::loginUser(const std::string login, const std::string password)
 	FileService::saveToFile(skey_path, Utils::to_string(login_data.first));
 	user = new User(login_data.second);
 }
+
 bool Application::authorized() const
 {
 	return user != nullptr;
+}
+
+std::vector<std::string> Application::getChatHeaders()
+{
+	return {};
 }

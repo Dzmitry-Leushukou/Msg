@@ -26,13 +26,14 @@ public:
 	//Requests
 	void registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs);
 	std::pair<std::vector<unsigned char>, json> loginUser(const std::string& username, const std::string& password, const std::string& current_mac);
-    bool saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data); 
-
+	std::vector<std::string> getHeaders(std::string& username);
+	bool isUsernameExists(const std::string& username);
 private:
 	json getUserDocument(const std::string& username);
 	static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);
 	json parseFirestoreFields(const json& fields);
 	bool checkMacAddress(const json& allowed_macs, const std::string& mac);
+	bool saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data);
 
 	std::string api;
 	std::string proj_id;

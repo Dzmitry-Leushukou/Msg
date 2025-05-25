@@ -20,6 +20,7 @@ public:
 	void regUser(std::string login, std::string password);
 	void loginUser(std::string login, std::string password);
 	bool authorized() const;
+	std::vector<std::string> getChatHeaders();
 private:
 
 	User* user = nullptr;

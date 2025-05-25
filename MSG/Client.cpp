@@ -47,9 +47,20 @@ std::pair<std::vector<unsigned char>, json> Client::loginUser(const std::string&
 	return {private_key, user_data};
 }
 
+std::vector<std::string> Client::getHeaders(std::string& username)
+{
+	json user_data = getUserDocument(username);
+	if (user_data.empty())
+	{
+		throw std::runtime_error("");
+	}
+	std::vector<int>chatsId = user_data["chatsId"];
+
+}
+
 void Client::registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs)
 {
-	if (!getUserDocument(username).empty()) 
+	if (isUsernameExists(username))
 	{
 		throw std::invalid_argument("Username \""+username+"\" already exist\n");
 	}
@@ -223,4 +234,29 @@ json Client::parseFirestoreFields(const json& fields)
 		}
 	}
 	return result;
+}
+
+bool Client::isUsernameExists(const std::string& username)
+{
+	CURL* curl = curl_easy_init();
+	std::string response;
+
+	std::string url = "https://firestore.googleapis.com/v1/projects/"+this->proj_id+"/databases/(default)/documents/users/" + username +
+		"?mask.fieldPaths=__name__&key="+api;
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+	curl_easy_cleanup(curl);
+
+	if (res != CURLE_OK)
+	{
+		throw std::runtime_error("Can`t acces to server\n");
+	}
+
+	return (http_code == 200); // 200 = пользователь существует
 }

@@ -3,6 +3,7 @@
 #include <iostream>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include "Application.h"
 class Page
 {
 public:
@@ -15,5 +16,6 @@ protected:
 	//Visual methods
 	void clearScreen();
 	void pause();
+	Application* app = nullptr;
 };
 

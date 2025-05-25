@@ -14,7 +14,5 @@ private:
 	std::string username();
 	std::string password();
 	std::string getMethod();
-
-	Application* app=nullptr;
 };
 
