@@ -133,6 +133,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChatUI.cpp" />
     <ClCompile Include="CreateChatForm.cpp" />
     <ClCompile Include="InvitesMenu.cpp" />
     <ClCompile Include="LoginForm.cpp" />
@@ -143,6 +144,7 @@
     <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChatUI.h" />
     <ClInclude Include="CreateChatForm.h" />
     <ClInclude Include="InvitesMenu.h" />
     <ClInclude Include="LoginForm.h" />

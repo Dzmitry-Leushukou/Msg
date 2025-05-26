@@ -67,9 +67,12 @@ void MainMenu::inputHandler()
 			return;
 		}
 		else
-	if (Utils::isUInt(s))
+	if (Utils::isUInt(s)&&stoul(s)<chatHeaders.size())
 	{
-		
+		ChatUI* c = new ChatUI(*app,stoul(s));
+		c->start();
+		delete c;
+		c = nullptr;
 	}
 	else
 	{
