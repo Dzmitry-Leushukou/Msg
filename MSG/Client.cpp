@@ -1,9 +1,10 @@
 #include "Client.h"
 
-Client::Client(std::string api, std::string pid)
+Client::Client(std::string api, std::string pid, std::string key_path)
 {
 	this->api = api;
 	this->proj_id = pid;
+	this->key_path = key_path;
 	Crypto::init();
 }
 
@@ -20,10 +21,12 @@ void Client::loginUser(const std::string& username, const std::string& password,
 	{
 		throw std::invalid_argument("User not found\n");
 	}
-
+	salt = Crypto::base64Decode(getUserField(username, "salt")["stringValue"]);
+	std::vector<unsigned char> key = Crypto::deriveKeyFromPassword(password,salt);
+	FileService::saveToFile(key_path, key);
 	if (!isMacAllowed(username, current_mac))
 	{
-		addMAC(username, current_mac);
+		addMAC(username, Crypto::encryptMAC(current_mac,key));
 		throw std::invalid_argument("NO ACCESS\nP.S.\nRequest to get was sent\n");
 	}
 }
@@ -45,13 +48,17 @@ void Client::registerUser(const std::string& username, const std::string& passwo
 		throw std::invalid_argument("Username \"" + username + "\" already exists\n");
 	}
 
-	std::vector<unsigned char> private_key, public_key;
-	Crypto::generateKeyPair(macs, private_key, public_key);
+	std::vector<unsigned char> salt = Crypto::generateSalt();
+	std::vector<unsigned char> key = Crypto::deriveKeyFromPassword(password,salt);
+	auto encrypted_macs = Crypto::encryptAllMACs(macs, key);
+	auto seed = Crypto::generateKeySeed(encrypted_macs, key);
+	auto [public_key, private_key] = Crypto::generateKeyPair(seed);
 
 	json user_data = {
 		{"password", Crypto::hashPassword(password)},
+		{"salt", Crypto::base64Encode(salt)},
 		{"public_key", Crypto::base64Encode(public_key)},
-		{"allowed_macs", macs},
+		{"allowed_macs", encrypted_macs},
 		{"requests", json::array()},
 		{"chat_invites", json::array()},
 		{"chatsId", json::array()}
@@ -89,13 +96,13 @@ std::string Client::getMAC()
 	throw std::runtime_error("Can`t getting MAC address");
 }
 
-bool Client::isMacAllowed(const std::string& username, const std::string& target_mac) {
-
+bool Client::isMacAllowed(const std::string& username, const std::string& target_mac)
+{
 	json allowed_macs_field = getUserField(username, "allowed_macs");
 	std::vector<std::string> allowed_macs;
 	if (!allowed_macs_field.empty() && allowed_macs_field.contains("arrayValue")) {
 		for (const auto& item : allowed_macs_field["arrayValue"]["values"]) {
-			allowed_macs.push_back(item["stringValue"].get<std::string>());
+			allowed_macs.push_back(Crypto::decryptMAC(item["stringValue"].get<std::string>(),FileService::loadFromFile(key_path)));
 		}
 	}
 	return std::find(allowed_macs.begin(), allowed_macs.end(), target_mac) != allowed_macs.end();
@@ -316,11 +323,8 @@ void Client::addMAC(const std::string& username, const std::string& mac) {
 			requests.push_back(item["stringValue"].get<std::string>());
 		}
 	}
-	
-	if (std::find(requests.begin(), requests.end(), mac) != requests.end()) {
-		return;
-	}
-	requests.push_back(mac);
+	std::string emac = Crypto::encryptMAC(mac, FileService::loadFromFile(key_path));
+	requests.push_back(emac);
 
 
 	json body = {
@@ -725,19 +729,27 @@ void Client::addChat(const std::string& id, const std::string& username)
 	}
 }
 
-std::vector<std::string> Client::getRequests(const std::string& username)
+std::string Client::getRequests(const std::string& username)
 {
 	std::vector<std::string> requests;
 	json Ids = getUserField(username, "requests");
 	for (auto& id : Ids["arrayValue"]["values"])
 	{
-		requests.push_back(id["stringValue"]);
+		return Crypto::decryptMAC(id["stringValue"].get<std::string>(),FileService::loadFromFile(key_path));
 	}
-	return requests;
+	return "";
 }
 
-void Client::addAllowedMAC(const std::string& username, const std::string& mac)
+void Client::addAllowedMAC(const std::string& username)
 {
+	
+	std::string mac;
+	json Ids = getUserField(username, "requests");
+	for (auto& id : Ids["arrayValue"]["values"])
+	{
+		mac = id["stringValue"].get<std::string>();
+		break;
+	}
 	CURL* curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("CURL initialization failed");
@@ -758,9 +770,10 @@ void Client::addAllowedMAC(const std::string& username, const std::string& mac)
 			requests.push_back(item["stringValue"].get<std::string>());
 		}
 	}
-
-	if (std::find(requests.begin(), requests.end(), mac) != requests.end()) {
-		return;
+	for (auto& i : requests)
+	{
+		if (Crypto::decryptMAC(i,FileService::loadFromFile(key_path)) == Crypto::decryptMAC(mac, FileService::loadFromFile(key_path)))
+			return;
 	}
 	requests.push_back(mac);
 
@@ -811,8 +824,20 @@ void Client::addAllowedMAC(const std::string& username, const std::string& mac)
 	}
 }
 
-void Client::setRequests(const std::string& username, std::vector<std::string>q)
+void Client::popRequest(const std::string& username)
 {
+	std::vector<std::string> requests;
+	json Ids = getUserField(username, "requests");
+	bool pop = false;
+	for (auto& id : Ids["arrayValue"]["values"])
+	{
+		if (!pop)
+		{
+			pop = true;
+			continue;
+		}
+		requests.push_back(id["stringValue"].get<std::string>());
+	}
 	CURL* curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("CURL initialization failed");
@@ -824,7 +849,6 @@ void Client::setRequests(const std::string& username, std::vector<std::string>q)
 		"?updateMask.fieldPaths=requests&key=" + api;
 	curl_free(escaped_username);
 
-	std::vector<std::string> requests=q;
 
 	json body = {
 		{"fields", {

@@ -9,14 +9,14 @@ void RequestsMenu::start()
 	clearScreen();
 	while (true) 
 	{
-		std::vector<std::string>q = app->getRequests();
+		std::string q = app->getRequests();
 		std::string s;
 		clearScreen();
 		std::cout << "[Request]\n";
-		if (q.empty())
+		if (q=="")
 			std::cout << "No requests\n";
 		else
-			std::cout << q.at(0)<<'\n';
+			std::cout << q<<'\n';
 		std::cout << "-------------------------------\n";
 		help();
 		std::getline(std::cin, s);
@@ -24,8 +24,8 @@ void RequestsMenu::start()
 			return;
 		if (s == "y")
 		{
-			if(!q.empty())
-				app->addAllowedMAC(q.at(0));
+			if(q != "")
+				app->addAllowedMAC();
 		}
 		else if (s == "n")
 		{
@@ -37,9 +37,7 @@ void RequestsMenu::start()
 			pause();
 			continue;
 		}
-		if (!q.empty())
-		q.erase(q.begin());
-		app->updateRequests(q);
+		app->popRequest();
 	}
 }
 

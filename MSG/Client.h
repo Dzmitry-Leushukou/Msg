@@ -12,6 +12,7 @@
 #include "Image.h"
 #include "Text.h"
 #include "Crypto.h"
+#include "FileService.h"
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "iphlpapi.lib")
@@ -21,7 +22,7 @@ using json = nlohmann::json;
 class Client
 {
 public:
-	Client(std::string,std::string);
+	Client(std::string,std::string,std::string);
 	std::string getMAC();
 	//Requests
 	void registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs);
@@ -32,15 +33,15 @@ public:
 	json getUserField(const std::string& username, const std::string& field);
 	json getChatField(const std::string& chatId, const std::string& field);
 	void addMAC(const std::string& username, const std::string& mac);
-	void setRequests(const std::string& username, std::vector<std::string>q);
-	void addAllowedMAC(const std::string& username, const std::string& mac);
+	void popRequest(const std::string& username);
+	void addAllowedMAC(const std::string& username);
 	void deleteUser(const std::string& username);
 	void deleteChat(const std::string& id);
 	void updateChatUserAmount(const std::string& id, const std::string& kol);
 	void createChat(const std::string& chatName, const std::string& username);
 	bool isChatExists(const std::string& id);
 	void addChat(const std::string& id, const std::string& username);
-	std::vector<std::string> getRequests(const std::string& username);
+	std::string getRequests(const std::string& username);
 	void updateTime(const std::string& username);
 	time_t nowTime() const;
 	std::pair<std::string,std::string> getInvite(const std::string& username);
@@ -58,6 +59,8 @@ private:
 
 	std::string api;
 	std::string proj_id;
+	std::string key_path;
+	std::vector<unsigned char> salt;
 	CURL* curl = nullptr;
 };
 

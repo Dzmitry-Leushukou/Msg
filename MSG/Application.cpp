@@ -11,9 +11,10 @@ Application::~Application()
 
 Application::Application():userOnline(&Application::updUserStatus, this)
 {
-	std::vector<std::string>tmpData = FileService::getConfigInfo(3);
+	std::vector<std::string>tmpData = FileService::getConfigInfo(4);
 	this->skey_path = tmpData.at(2);
-	client = new Client(tmpData.at(0), tmpData.at(1));
+	this->key_path = tmpData.at(3);
+	client = new Client(tmpData.at(0), tmpData.at(1), tmpData.at(3));
 	this->curMAC = client->getMAC();
 	
 }
@@ -53,19 +54,19 @@ void Application::createChat(const std::string& chatName)
 	//gen key
 }
 
-std::vector<std::string>Application::getRequests()
+std::string Application::getRequests()
 {
 	return client->getRequests(user->getUsername());
 }
 
-void Application::addAllowedMAC(const std::string& MAC)
+void Application::addAllowedMAC()
 {
-	client->addAllowedMAC(user->getUsername(),MAC);
+	client->addAllowedMAC(user->getUsername());
 }
 
-void Application::updateRequests(std::vector<std::string>q)
+void Application::popRequest()
 {
-	client->setRequests(user->getUsername(),q);
+	client->popRequest(user->getUsername());
 }
 
 void Application::clearUser()

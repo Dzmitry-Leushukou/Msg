@@ -24,9 +24,9 @@ public:
 	std::vector<std::string> getChatHeaders();
 	void deleteUser();
 	void createChat(const std::string& chatName);
-	std::vector<std::string>getRequests();
-	void addAllowedMAC(const std::string& MAC);
-	void updateRequests(std::vector<std::string>q);
+	std::string getRequests();
+	void addAllowedMAC();
+	void popRequest();
 	void updUserStatus();
 	std::pair<std::string,std::string> getInvite();
 	std::string getChatName(const std::string& id)const;
@@ -37,7 +37,7 @@ private:
 	User* user = nullptr;
 	std::string curMAC;
 	Client* client = nullptr;
-	std::string skey_path;
+	std::string skey_path,key_path;
 	std::thread userOnline;
 };
 
