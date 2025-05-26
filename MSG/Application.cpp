@@ -14,7 +14,7 @@ Application::Application():userOnline(&Application::updUserStatus, this)
 	std::vector<std::string>tmpData = FileService::getConfigInfo(4);
 	this->skey_path = tmpData.at(2);
 	this->key_path = tmpData.at(3);
-	client = new Client(tmpData.at(0), tmpData.at(1), tmpData.at(3));
+	client = new Client(tmpData.at(0), tmpData.at(1), tmpData.at(3),tmpData.at(2));
 	this->curMAC = client->getMAC();
 	
 }

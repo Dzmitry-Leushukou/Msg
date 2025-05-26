@@ -22,7 +22,7 @@ using json = nlohmann::json;
 class Client
 {
 public:
-	Client(std::string,std::string,std::string);
+	Client(std::string,std::string,std::string, std::string);
 	std::string getMAC();
 	//Requests
 	void registerUser(const std::string& username, const std::string& password, const std::vector<std::string>& macs);
@@ -34,6 +34,7 @@ public:
 	json getChatField(const std::string& chatId, const std::string& field);
 	void addMAC(const std::string& username, const std::string& mac);
 	void popRequest(const std::string& username);
+	void updateKeys(const std::string& username);
 	void addAllowedMAC(const std::string& username);
 	void deleteUser(const std::string& username);
 	void deleteChat(const std::string& id);
@@ -49,6 +50,7 @@ public:
 	void popInvite(const std::string& username);
 	bool userHasChatId(const std::string& username, const std::string& id);
 private:
+	std::vector<std::string> getMACs(const std::string& username);
 	std::string findChatsId();
 	void decreaseChatUsers(const std::string& id);
 	json getUserDocument(const std::string& username);
@@ -60,6 +62,7 @@ private:
 	std::string api;
 	std::string proj_id;
 	std::string key_path;
+	std::string skey_path;
 	std::vector<unsigned char> salt;
 	CURL* curl = nullptr;
 };
