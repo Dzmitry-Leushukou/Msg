@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <sodium.h>
 #include <algorithm>
+#include <array>
 
 class Crypto
 {

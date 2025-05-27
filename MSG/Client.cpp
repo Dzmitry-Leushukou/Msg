@@ -7,6 +7,21 @@ Client::Client(std::string api, std::string pid, std::string key_path,std::strin
 	this->key_path = key_path;
 	this->skey_path = skey_path;
 	Crypto::init();
+	curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_TCP_FASTOPEN, 1L);
+	curl_easy_setopt(curl, CURLOPT_DNS_CACHE_TIMEOUT, 600L);
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 50L);
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 150L);
+	curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip, deflate, br");
+	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+	curl_easy_setopt(curl, CURLOPT_HEADER, 0L);
+}
+
+Client::~Client()
+{
+	curl_easy_cleanup(curl);
 }
 
 void Client::loginUser(const std::string& username, const std::string& password, const std::string& current_mac)
@@ -111,10 +126,9 @@ bool Client::isMacAllowed(const std::string& username, const std::string& target
 
 bool Client::saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data)
 {
-	CURL* curl = curl_easy_init();
+	curl = curl_easy_init();
 	if (!curl) return false;
 
-	
 	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
 		"/databases/(default)/documents/" + collection +
 		"?documentId=" + doc_id + "&key=" + api;
@@ -160,9 +174,10 @@ bool Client::saveToFirestore(const std::string& collection, const std::string& d
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_data.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 
-		
-		CURLcode res = curl_easy_perform(curl);
+		curl_easy_perform(curl);
 		long http_code = 0;
 		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
 
@@ -230,7 +245,7 @@ json Client::parseFirestoreFields(const json& fields)
 
 bool Client::isUsernameExists(const std::string& username)
 {
-	CURL* curl = curl_easy_init();
+	curl = curl_easy_init();
 	std::string response;
 
 	std::string url = "https://firestore.googleapis.com/v1/projects/"+this->proj_id+"/databases/(default)/documents/users/" + username +
@@ -280,7 +295,7 @@ json Client::getUserField(const std::string& username, const std::string& field)
 
 json Client::getChatField(const std::string& chatId, const std::string& field)
 {
-	CURL* curl = curl_easy_init();
+	curl = curl_easy_init();
 	std::string response;
 	std::string url =
 		"https://firestore.googleapis.com/v1/projects/" + proj_id +
@@ -304,7 +319,7 @@ json Client::getChatField(const std::string& chatId, const std::string& field)
 }
 
 void Client::addMAC(const std::string& username, const std::string& mac) {
-	CURL* curl = curl_easy_init();
+	curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("CURL initialization failed");
 	}

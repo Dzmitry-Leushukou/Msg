@@ -8,6 +8,7 @@
 #include <sstream>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
+#include <mutex>
 
 #include "Image.h"
 #include "Text.h"
@@ -19,9 +20,11 @@
 
 using json = nlohmann::json;
 
+
 class Client
 {
 public:
+	~Client();
 	Client(std::string,std::string,std::string, std::string);
 	std::string getMAC();
 	//Requests

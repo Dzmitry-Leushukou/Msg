@@ -22,7 +22,6 @@ std::string Crypto::encryptMAC(const std::string& mac, const std::vector<unsigne
         nullptr, nonce, key.data()
     );
 
-    // Объединяем nonce + ciphertext и кодируем в Base64
     std::vector<unsigned char> combined(nonce, nonce + sizeof(nonce));
     combined.insert(combined.end(), ciphertext.begin(), ciphertext.end());
     return base64Encode(combined);
@@ -60,11 +59,16 @@ std::string Crypto::decryptMAC(const std::string& base64_data, const std::vector
 
 std::string Crypto::hashPassword(const std::string& password)
 {
-    std::vector<unsigned char> hash(crypto_pwhash_STRBYTES);
-    crypto_pwhash_str(reinterpret_cast<char*>(hash.data()),
-        password.c_str(), password.size(),
+    std::string hash;
+    hash.resize(crypto_pwhash_STRBYTES);
+    const int result = crypto_pwhash_str(
+        &hash[0],  // C++17: hash.data()
+        password.data(),
+        password.size(),
         crypto_pwhash_OPSLIMIT_INTERACTIVE,
-        crypto_pwhash_MEMLIMIT_INTERACTIVE);
+        crypto_pwhash_MEMLIMIT_INTERACTIVE
+    );
+    hash.resize(std::strlen(hash.c_str()));
     return std::string(reinterpret_cast<char*>(hash.data()));
 }
 
