@@ -3,13 +3,14 @@
 MainMenu::MainMenu(Application& app)
 {
 	this->app = &app;
+	getHeaders();
 }
 void MainMenu::start()
 {
 	while (app->authorized())
 	{
 		clearScreen();
-		getHeaders();
+		
 		std::cout << "===Chats===\n";
 		unsigned int id = 0;
 		for (auto& i : chatHeaders)
@@ -32,9 +33,13 @@ void MainMenu::inputHandler()
 		cc->start();
 		if (cc->getName() == "")
 			return;
+		std::cout << "Creating chat...";
 		app->createChat(cc->getName());
 		delete cc;
 		cc = nullptr;
+		clearScreen();
+		std::cout << "Updating info..";
+		getHeaders();
 ;	}
 	else
 	if (s == "r")

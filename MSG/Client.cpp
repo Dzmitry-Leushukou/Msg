@@ -9,9 +9,6 @@ Client::Client(std::string api, std::string pid, std::string key_path,std::strin
 	Crypto::init();
 	curl = curl_easy_init();
 	curl_easy_setopt(curl, CURLOPT_TCP_FASTOPEN, 1L);
-	curl_easy_setopt(curl, CURLOPT_DNS_CACHE_TIMEOUT, 600L);
-	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 50L);
-	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 150L);
 	curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
 	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "gzip, deflate, br");
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
@@ -176,6 +173,8 @@ bool Client::saveToFirestore(const std::string& collection, const std::string& d
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L);
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		std::string response;
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
 		curl_easy_perform(curl);
 		long http_code = 0;
