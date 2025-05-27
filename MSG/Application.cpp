@@ -6,7 +6,6 @@ Application::~Application()
 	delete user;
 	user = nullptr;
 	client = nullptr;
-	userOnline.detach();
 }
 
 Application::Application():userOnline(&Application::updUserStatus, this)
@@ -83,7 +82,7 @@ void Application::updUserStatus()
 		{
 			client->updateTime(user->getUsername());
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(5));
+		std::this_thread::sleep_for(std::chrono::seconds(3));
 	}
 }
 

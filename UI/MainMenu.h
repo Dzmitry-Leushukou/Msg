@@ -4,6 +4,7 @@
 #include "CreateChatForm.h"
 #include "RequestsMenu.h"
 #include "InvitesMenu.h"
+#include "ChatUI.h"
 #include <vector>
 #include <string>
 #include <iostream>

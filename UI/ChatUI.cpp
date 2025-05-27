@@ -3,8 +3,7 @@
 ChatUI::ChatUI(Application& app, unsigned int num)
 {
 	this->app = &app;
-	app->updateKeys();
-	app->getChat(num);
+	//app->getChat(num);
 }
 
 void ChatUI::start()
