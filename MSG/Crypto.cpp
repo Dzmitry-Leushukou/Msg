@@ -167,3 +167,76 @@ std::vector<unsigned char> Crypto::generateSalt()
     randombytes_buf(salt.data(), salt.size());
     return salt;
 }
+
+std::vector<unsigned char> Crypto::generateChatKey() 
+{
+    std::vector<unsigned char> key(crypto_aead_aes256gcm_KEYBYTES);
+    randombytes_buf(key.data(), key.size());
+    return key;
+}
+
+std::vector<unsigned char> Crypto::generateKeySeed(const std::vector<std::string>& macs) {
+    std::vector<std::string> sortedMacs = macs;
+    std::sort(sortedMacs.begin(), sortedMacs.end());
+
+    std::string combined;
+    for (const auto& mac : sortedMacs) {
+        combined += mac;
+    }
+
+    std::vector<unsigned char> seed(crypto_hash_sha256_BYTES);
+    crypto_hash_sha256(seed.data(),
+        reinterpret_cast<const unsigned char*>(combined.data()),
+        combined.size());
+
+    return seed;
+}
+
+std::pair<std::vector<unsigned char>, std::vector<unsigned char>> Crypto::generateEncryptionKeyPair(const std::vector<std::string>& macs)
+{
+    auto seed = generateKeySeed(macs);
+    if (seed.size() != crypto_box_SEEDBYTES)
+    {
+        throw std::runtime_error("Invalid seed size for encryption keys");
+    }
+
+    std::vector<unsigned char> publicKey(crypto_box_PUBLICKEYBYTES);
+    std::vector<unsigned char> privateKey(crypto_box_SECRETKEYBYTES);
+    crypto_box_seed_keypair(publicKey.data(), privateKey.data(), seed.data());
+
+    return { publicKey, privateKey };
+}
+
+std::vector<unsigned char> Crypto::encryptAsymmetric(const std::vector<unsigned char>& publicKey, const std::vector<unsigned char>& message) 
+{
+    if (publicKey.size() != crypto_box_PUBLICKEYBYTES) {
+        throw std::runtime_error("Invalid public key size");
+    }
+
+    std::vector<unsigned char> ciphertext(message.size() + crypto_box_SEALBYTES);
+    crypto_box_seal(ciphertext.data(), message.data(), message.size(), publicKey.data());
+
+    return ciphertext;
+}
+
+std::vector<unsigned char> Crypto::decryptAsymmetric(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& publicKey,
+const std::vector<unsigned char>& privateKey)
+{
+    if (publicKey.size() != crypto_box_PUBLICKEYBYTES ||
+        privateKey.size() != crypto_box_SECRETKEYBYTES) {
+        throw std::runtime_error("Invalid key sizes");
+    }
+
+    std::vector<unsigned char> decrypted(ciphertext.size() - crypto_box_SEALBYTES);
+    if (crypto_box_seal_open(
+        decrypted.data(),
+        ciphertext.data(),
+        ciphertext.size(),
+        publicKey.data(),
+        privateKey.data()
+    ) != 0) {
+        throw std::runtime_error("Decryption failed");
+    }
+
+    return decrypted;
+}

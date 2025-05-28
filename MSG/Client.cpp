@@ -37,6 +37,7 @@ void Client::loginUser(const std::string& username, const std::string& password,
 	salt = Crypto::base64Decode(getUserField(username, "salt")["stringValue"]);
 	std::vector<unsigned char> key = Crypto::deriveKeyFromPassword(password,salt);
 	FileService::saveToFile(key_path, key);
+	updateKeys(username);
 	if (!isMacAllowed(username, current_mac))
 	{
 		addMAC(username, Crypto::encryptMAC(current_mac,key));
@@ -65,7 +66,7 @@ void Client::registerUser(const std::string& username, const std::string& passwo
 	std::vector<unsigned char> key = Crypto::deriveKeyFromPassword(password,salt);
 	auto encrypted_macs = Crypto::encryptAllMACs(macs, key);
 	auto seed = Crypto::generateKeySeed(encrypted_macs, key);
-	auto [public_key, private_key] = Crypto::generateKeyPair(seed);
+	auto [public_key, private_key] = Crypto::generateEncryptionKeyPair(macs);
 
 	json user_data = {
 		{"password", Crypto::hashPassword(password)},
@@ -547,7 +548,6 @@ void Client::createChat(const std::string& name, const std::string& username)
 {
 	const std::string chatId = findChatsId();
 
-	
 	json user_data = {
 		{"name", name},
 		{"usersAmount","1"},
@@ -557,7 +557,15 @@ void Client::createChat(const std::string& name, const std::string& username)
 
 	if (!saveToFirestore("chats", chatId, user_data))
 		throw std::runtime_error("Can`t acces to server\n");
-	addChat(chatId, username);
+	
+
+	addChat(chatId, Crypto::encryptAsymmetric(getPublicKey(username), Crypto::generateChatKey()), username);
+}
+
+std::vector<unsigned char>Client::getPublicKey(const std::string& username)
+{
+	std::string k = getUserField(username, "public_key")["stringValue"].get<std::string>();
+	return Crypto::base64Decode(k);
 }
 
 std::string Client::findChatsId()
@@ -597,20 +605,13 @@ bool Client::isChatExists(const std::string& id)
 	return (http_code == 200);
 }
 
-void Client::addChat(const std::string& id, const std::string& username)
+void Client::addChat(const std::string& id, std::vector<unsigned char>key, const std::string& username)
 {
 	CURL* curl = curl_easy_init();
 	if (!curl) {
 		throw std::runtime_error("CURL initialization failed");
 	}
-
-	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
-	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
-		"/databases/(default)/documents/users/" + std::string(escaped_username) +
-		"?updateMask.fieldPaths=chatsId&key=" + api;
-	curl_free(escaped_username);
-
-
+	// get Chats id
 
 	json requests_field = getUserField(username, "chatsId");
 	std::vector<std::string> requests;
@@ -625,30 +626,56 @@ void Client::addChat(const std::string& id, const std::string& username)
 	}
 	requests.push_back(id);
 
+	//Get chatsKeys
+
+	requests_field = getUserField(username, "chatsKey");
+	std::vector<std::string> keys;
+	if (!requests_field.empty() && requests_field.contains("arrayValue")) {
+		for (const auto& item : requests_field["arrayValue"]["values"]) {
+			keys.push_back(item["stringValue"].get<std::string>());
+		}
+	}
+	keys.push_back(Crypto::base64Encode(key));
+
 
 	json body = {
-		{"fields", {
-			{"chatsId", {
-				{"arrayValue", {
-					{"values", json::array()}
-				}}
+	{"fields", {
+		{"chatsId", {
+			{"arrayValue", {
+				{"values", json::array()}
+			}}
+		}},
+		{"chatsKey", {
+			{"arrayValue", {
+				{"values", json::array()}
 			}}
 		}}
+	}}
 	};
 
-
+	//Fill body
 	for (const auto& req : requests) {
 		body["fields"]["chatsId"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
 	}
-
+	for (const auto& req : keys) {
+		body["fields"]["chatsKey"]["arrayValue"]["values"].push_back({ {"stringValue", req} });
+	}
 
 	struct curl_slist* headers = nullptr;
-	headers = curl_slist_append(headers, "Content-Type: application/json; charset=utf-8");
-
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+	headers = curl_slist_append(headers, "Accept: application/json");
 
 	std::string request_body = body.dump();
+	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + std::string(escaped_username) +
+		"?updateMask.fieldPaths=chatsId" +  // Добавляем chatsId
+		"&updateMask.fieldPaths=chatsKey" +  // Добавляем chatsKey
+		"&key=" + api;
+	curl_free(escaped_username);
+	
 	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH"); // Используем PATCH вместо PUT
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
 	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
@@ -973,7 +1000,7 @@ time_t Client::nowTime() const
 	return time(nullptr);
 }
 
-std::pair<std::string, std::string> Client::getInvite(const std::string& username)
+std::vector<std::string> Client::getInvite(const std::string& username)
 {
 	json invites = getUserField(username, "chat_invites");
 
@@ -988,8 +1015,9 @@ std::pair<std::string, std::string> Client::getInvite(const std::string& usernam
 	{
 		std::string chat_id = i["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>();
 		std::string sender = i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
+		std::string key = i["mapValue"]["fields"]["key"]["stringValue"].get<std::string>();
 		if (userHasChatId(sender,chat_id))
-			return { i["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>(),i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>() };
+			return { chat_id,sender,key };
 	}
 	return { "", "" };
 }
@@ -1080,8 +1108,7 @@ void Client::popInvite(const std::string& username) {
 void Client::updateKeys(const std::string& username)
 {
 	//Reencrypt chat key
-	auto seed = Crypto::generateKeySeed(getMACs(username), FileService::loadFromFile(key_path));
-	auto [public_key, private_key] = Crypto::generateKeyPair(seed);
+	auto [public_key, private_key] = Crypto::generateEncryptionKeyPair(getMACs(username));
 
 	FileService::saveToFile(skey_path, private_key);
 
@@ -1093,12 +1120,12 @@ void Client::updateKeys(const std::string& username)
 	char* escaped_id = curl_easy_escape(curl, username.c_str(), username.size());
 	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
 		"/databases/(default)/documents/users/" + escaped_id +
-		"?updateMask.fieldPaths=publicKey&key=" + api;
+		"?updateMask.fieldPaths=public_key&key=" + api;
 	curl_free(escaped_id);
 
 	json body = {
 		{"fields", {
-			{"publicKey", {
+			{"public_key", {
 				{"stringValue", Crypto::base64Encode(public_key)}
 			}}
 		}}

@@ -21,5 +21,11 @@ class Crypto
 		static std::string base64Encode(const std::vector<unsigned char>& data);
 		static std::vector<unsigned char> base64Decode(const std::string& encoded);
 		static std::vector<unsigned char> generateSalt();
+		static std::vector<unsigned char> generateChatKey();
+		static std::pair<std::vector<unsigned char>, std::vector<unsigned char>> generateEncryptionKeyPair(const std::vector<std::string>& macs);
+		static std::vector<unsigned char> generateKeySeed(const std::vector<std::string>& macs);
+		static std::vector<unsigned char> encryptAsymmetric(const std::vector<unsigned char>& publicKey, const std::vector<unsigned char>& message);
+		static std::vector<unsigned char> decryptAsymmetric(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& publicKey,
+			const std::vector<unsigned char>& privateKey);
 };
 

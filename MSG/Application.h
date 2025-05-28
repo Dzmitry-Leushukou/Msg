@@ -28,10 +28,10 @@ public:
 	void addAllowedMAC();
 	void popRequest();
 	void updUserStatus();
-	std::pair<std::string,std::string> getInvite();
+	std::vector<std::string> getInvite();
 	std::string getChatName(const std::string& id)const;
 	void popInvite();
-	void acceptInvite(const std::string& id);
+	void acceptInvite(const std::string& id, const std::string& key);
 private:
 
 	User* user = nullptr;
@@ -39,5 +39,6 @@ private:
 	Client* client = nullptr;
 	std::string skey_path,key_path;
 	std::thread userOnline;
+	unsigned int choosed_chat;
 };
 

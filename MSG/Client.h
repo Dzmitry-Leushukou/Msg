@@ -44,11 +44,11 @@ public:
 	void updateChatUserAmount(const std::string& id, const std::string& kol);
 	void createChat(const std::string& chatName, const std::string& username);
 	bool isChatExists(const std::string& id);
-	void addChat(const std::string& id, const std::string& username);
+	void addChat(const std::string& id, std::vector<unsigned char>key, const std::string& username);
 	std::string getRequests(const std::string& username);
 	void updateTime(const std::string& username);
 	time_t nowTime() const;
-	std::pair<std::string,std::string> getInvite(const std::string& username);
+	std::vector<std::string> getInvite(const std::string& username);
 	std::string getChatName(const std::string& id);
 	void popInvite(const std::string& username);
 	bool userHasChatId(const std::string& username, const std::string& id);
@@ -61,6 +61,7 @@ private:
 	json parseFirestoreFields(const json& fields);
 	bool isMacAllowed(const std::string& username, const std::string& target_mac);
 	bool saveToFirestore(const std::string& collection, const std::string& doc_id, const json& data);
+	std::vector<unsigned char>getPublicKey(const std::string& username);
 
 	std::string api;
 	std::string proj_id;

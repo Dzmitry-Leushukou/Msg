@@ -14,11 +14,11 @@ void InvitesMenu::start()
 		clearScreen();
 		std::cout << "[Invite]\n";
 		
-		std::pair<std::string, std::string>q = app->getInvite();
-		if (q.first == "")
+		std::vector<std::string>q = app->getInvite();
+		if (q[0] == "")
 			std::cout << "No invites\n";
 		else
-			std::cout << "Invite to chat \""+app->getChatName(q.first)+"+\" from " + q.second << '\n';
+			std::cout << "Invite to chat \""+app->getChatName(q[0]) + "+\" from " + q[1] << '\n';
 		std::cout << "-------------------------------\n";
 		help();
 		std::getline(std::cin, s);
@@ -26,8 +26,8 @@ void InvitesMenu::start()
 			return;
 		if (s == "y")
 		{
-			if (q.first != "")
-				app->acceptInvite(q.first);
+			if (q[0] != "")
+				app->acceptInvite(q[0], q[1]);
 		}
 		else if (s == "n")
 		{

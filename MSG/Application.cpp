@@ -50,7 +50,6 @@ void Application::deleteUser()
 void Application::createChat(const std::string& chatName)
 {
 	client->createChat(chatName,user->getUsername());
-	//gen key
 }
 
 std::string Application::getRequests()
@@ -61,6 +60,7 @@ std::string Application::getRequests()
 void Application::addAllowedMAC()
 {
 	client->addAllowedMAC(user->getUsername());
+	client->updateKeys(user->getUsername());
 }
 
 void Application::popRequest()
@@ -86,7 +86,7 @@ void Application::updUserStatus()
 	}
 }
 
-std::pair<std::string, std::string> Application::getInvite()
+std::vector<std::string> Application::getInvite()
 {
 	return client->getInvite(user->getUsername());
 }
@@ -101,9 +101,8 @@ void Application::popInvite()
 	client->popInvite(user->getUsername());
 }
 
-void Application::acceptInvite(const std::string& id)
+void Application::acceptInvite(const std::string& id, const std::string& key)
 {
-	client->addChat(id, user->getUsername());
-	//regen keys
-	//encrpyt msg 
+	client->addChat(id,Crypto::base64Decode(key), user->getUsername()); 
+	
 }
