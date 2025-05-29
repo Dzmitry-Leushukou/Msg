@@ -3,7 +3,7 @@
 ChatUI::ChatUI(Application& app, unsigned int num)
 {
 	this->app = &app;
-    chatId = num;
+    this->app->loadChat(num);
 }
 
 void ChatUI::start()
@@ -76,9 +76,11 @@ void ChatUI::inputHandler(std::string s)
         {
 
         }
-        else app->sendMessage(std::to_string(chatId)),s);
+        //else app->sendMessage(std::to_string(chatId)),s);
 }
 void ChatUI::updateChat()
 {
-    messages.emplace_back(app->getNewMessage(std::to_string(chatId)));
+    time_t tmp = time(0);
+    //messages.emplace_back(app->getNewMessage(std::to_string(chatId), lastUpdateTime));
+    lastUpdateTime = tmp;
 }

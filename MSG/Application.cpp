@@ -107,12 +107,16 @@ void Application::acceptInvite(const std::string& id, const std::string& key)
 	
 }
 
-std::vector<Message>Application::getNewMessage(const std::string& id)
+std::vector<std::unique_ptr<Message>>Application::getNewMessage(time_t lastUpdateTime)
 {
-	
+	return client->getNewMessages(choosed_chat, lastUpdateTime);
 }
 
 void Application::sendMessage(const std::string& id, const std::string& message)
 {
-	
+	//return client->getNewMessages(choosed_chat, lastUpdateTime);
+}
+void Application::loadChat(unsigned int id)
+{
+	choosed_chat = client->loadChat(user->getUsername(),id);
 }

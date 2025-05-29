@@ -32,8 +32,9 @@ public:
 	std::string getChatName(const std::string& id)const;
 	void popInvite();
 	void acceptInvite(const std::string& id, const std::string& key);
-	std::vector<Message>getNewMessage(const std::string& id);
+	std::vector<std::unique_ptr<Message>>getNewMessage(time_t lastUpdateTime);
 	void sendMessage(const std::string& id, const std::string& message);
+	void loadChat(unsigned int id);
 private:
 
 	User* user = nullptr;
@@ -41,6 +42,6 @@ private:
 	Client* client = nullptr;
 	std::string skey_path,key_path;
 	std::thread userOnline;
-	unsigned int choosed_chat;
+	std::string choosed_chat;
 };
 

@@ -25,7 +25,7 @@ private:
     std::string user_input;
     std::mutex mtx;
     std::condition_variable cv;
-    unsigned int chatId;
-    std::vector<Message>messages;
+    std::vector<std::unique_ptr<Message>>messages;
+    time_t lastUpdateTime=0;
 };
 

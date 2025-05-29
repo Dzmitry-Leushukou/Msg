@@ -52,6 +52,8 @@ public:
 	std::string getChatName(const std::string& id);
 	void popInvite(const std::string& username);
 	bool userHasChatId(const std::string& username, const std::string& id);
+	std::vector<std::unique_ptr<Message>>getNewMessages(const std::string& id, time_t lastUpdateTime);
+	std::string loadChat(const std::string& username, unsigned int cid);
 private:
 	std::vector<std::string> getMACs(const std::string& username);
 	std::string findChatsId();
@@ -69,5 +71,6 @@ private:
 	std::string skey_path;
 	std::vector<unsigned char> salt;
 	CURL* curl = nullptr;
+	std::vector<unsigned char>publicKey;
 };
 

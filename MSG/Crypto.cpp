@@ -240,3 +240,63 @@ const std::vector<unsigned char>& privateKey)
 
     return decrypted;
 }
+
+std::string Crypto::encryptSymmetric(
+    const std::string& message,
+    const std::vector<unsigned char>& key)
+{
+    if (key.size() != crypto_aead_aes256gcm_KEYBYTES) {
+        throw std::runtime_error("Invalid key size for symmetric encryption");
+    }
+
+    unsigned char nonce[crypto_aead_aes256gcm_NPUBBYTES];
+    randombytes_buf(nonce, sizeof(nonce));
+
+    std::string ciphertext(message.size() + crypto_aead_aes256gcm_ABYTES, '\0');
+    unsigned long long ciphertext_len;
+
+    crypto_aead_aes256gcm_encrypt(
+        reinterpret_cast<unsigned char*>(&ciphertext[0]), &ciphertext_len,
+        reinterpret_cast<const unsigned char*>(message.data()), message.size(),
+        nullptr, 0,  
+        nullptr,     
+        nonce, key.data()
+    );
+
+    ciphertext.resize(ciphertext_len);
+    return std::string(nonce, nonce + sizeof(nonce)) + ciphertext;
+}
+
+std::string Crypto::decryptSymmetric(
+    const std::string& ciphertext,
+    const std::vector<unsigned char>& key)
+{
+    if (key.size() != crypto_aead_aes256gcm_KEYBYTES) {
+        throw std::runtime_error("Invalid key size for symmetric decryption");
+    }
+
+    if (ciphertext.size() < crypto_aead_aes256gcm_NPUBBYTES + crypto_aead_aes256gcm_ABYTES) {
+        throw std::runtime_error("Ciphertext too short");
+    }
+
+    unsigned char nonce[crypto_aead_aes256gcm_NPUBBYTES];
+    std::copy_n(ciphertext.data(), sizeof(nonce), nonce);
+
+    const std::string encrypted_data = ciphertext.substr(sizeof(nonce));
+
+    std::string plaintext(encrypted_data.size() - crypto_aead_aes256gcm_ABYTES, '\0');
+    unsigned long long plaintext_len;
+
+    if (crypto_aead_aes256gcm_decrypt(
+        reinterpret_cast<unsigned char*>(&plaintext[0]), &plaintext_len,
+        nullptr,
+        reinterpret_cast<const unsigned char*>(encrypted_data.data()), encrypted_data.size(),
+        nullptr, 0,
+        nonce, key.data()
+    ) != 0) {
+        throw std::runtime_error("Symmetric decryption failed: authentication error");
+    }
+
+    plaintext.resize(plaintext_len);
+    return plaintext;
+}

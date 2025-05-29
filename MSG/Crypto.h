@@ -26,6 +26,9 @@ class Crypto
 		static std::vector<unsigned char> generateKeySeed(const std::vector<std::string>& macs);
 		static std::vector<unsigned char> encryptAsymmetric(const std::vector<unsigned char>& publicKey, const std::vector<unsigned char>& message);
 		static std::vector<unsigned char> decryptAsymmetric(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& publicKey,
-			const std::vector<unsigned char>& privateKey);
+		const std::vector<unsigned char>& privateKey);
+		static std::string encryptSymmetric(const std::string& message,const std::vector<unsigned char>& key);
+
+		static std::string decryptSymmetric(const std::string& ciphertext,const std::vector<unsigned char>& key);
 };
 

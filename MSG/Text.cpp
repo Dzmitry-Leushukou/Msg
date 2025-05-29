@@ -1,13 +1,13 @@
 #include "Text.h"
 
-Text::Text(std::string sender, std::string data, std::string time)
+Text::Text(std::string sender, std::string data, std::string timestamp)
 {
 	this->sender = sender;
 	this->data = data;
-	timestamp = time;
+	this->timestamp = timestamp;
 }
 
 std::string Text::to_string()
 {
-	return sender + ": " + data;
+	return "----------------------------------------\n" + sender + ":\n"+data+"\n----------------------------------------\n\n";
 }

@@ -1109,7 +1109,7 @@ void Client::updateKeys(const std::string& username)
 {
 	//Reencrypt chat key
 	auto [public_key, private_key] = Crypto::generateEncryptionKeyPair(getMACs(username));
-
+	publicKey = public_key;
 	FileService::saveToFile(skey_path, private_key);
 
 	CURL* curl = curl_easy_init();
@@ -1167,4 +1167,81 @@ std::vector<std::string> Client::getMACs(const std::string& username)
 		macs.push_back(id["stringValue"].get<std::string>());
 	}
 	return macs;
+}
+
+std::vector<std::unique_ptr<Message>>Client::getNewMessages(const std::string& id,time_t lastUpdateTime)
+{
+
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents:runQuery?key=" + api;
+
+	nlohmann::json query = {
+		{"structuredQuery", {
+			{"from", {{{"collectionId", "chats/" + id + "/messages"}}},
+			{"where", {
+				{"fieldFilter", {
+					{"field", {{"fieldPath", "timestamp"}}},
+					{"op", "GREATER_THAN"},
+					{"value", {{"integerValue", nowTime()}}}
+				}}
+			}},
+			{"orderBy", {
+				{{"field", {{"fieldPath", "timestamp"}}}, {"direction", "ASCENDING"}}
+			}}
+		}}
+	} };
+
+
+	CURL* curl = curl_easy_init();
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+	std::string request_body = query.dump();
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+
+	std::vector<std::unique_ptr<Message>> messages;
+	if (res == CURLE_OK) {
+		auto json = nlohmann::json::parse(response);
+		for (const auto& item : json) {
+			if (item.contains("document")) {
+				const auto& doc = item["document"];
+				std::string sender = doc["name"].get<std::string>();
+				std::string text = Crypto::decryptSymmetric(doc["fields"]["text"]["stringValue"].get<std::string>(),FileService::loadFromFile("tmp.tmp"));
+				std::string time = doc["fields"]["timestamp"]["integerValue"].get<std::string>();
+				if (!doc["fields"]["format"].empty())
+					messages.push_back(std::make_unique < Image>(sender, text, doc["fields"]["format"].get<std::string>(), time));
+				else
+					messages.push_back(std::make_unique < Text>(sender,text,time));
+				
+			}
+		}
+	}
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	return messages;
+
+
+
+}
+
+std::string Client::loadChat(const std::string& username, unsigned cid)
+{
+	json Ids = getUserField(username, "chatsId");
+	json Keys = getUserField(username, "chatsKey");
+	std::string realId= Ids["arrayValue"]["values"][cid]["stringValue"];
+	std::string key = Keys["arrayValue"]["values"][cid]["stringValue"];
+	FileService::saveToFile("tmp.tmp", Crypto::decryptAsymmetric(Crypto::base64Decode(key),publicKey,FileService::loadFromFile(skey_path)));
+	return realId;
 }
