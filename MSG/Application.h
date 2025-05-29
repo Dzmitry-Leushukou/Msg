@@ -35,6 +35,10 @@ public:
 	std::vector<std::unique_ptr<Message>>getNewMessage(time_t lastUpdateTime);
 	void sendMessage(const std::string& id, const std::string& message);
 	void loadChat(unsigned int id);
+	std::string getCurChatName() const
+	{
+		return chatName;
+	}
 private:
 
 	User* user = nullptr;
@@ -43,5 +47,6 @@ private:
 	std::string skey_path,key_path;
 	std::thread userOnline;
 	std::string choosed_chat;
+	std::string chatName;
 };
 

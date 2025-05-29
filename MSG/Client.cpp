@@ -1037,7 +1037,7 @@ bool Client::userHasChatId(const std::string& username, const std::string& id)
 
 std::string Client::getChatName(const std::string& id)
 {
-	return getChatField(id, "name");
+	return getChatField(id, "name")["stringValue"];
 }
 
 void Client::popInvite(const std::string& username) {

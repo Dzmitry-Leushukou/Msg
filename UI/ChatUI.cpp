@@ -5,82 +5,109 @@ ChatUI::ChatUI(Application& app, unsigned int num)
 	this->app = &app;
     this->app->loadChat(num);
 }
+ChatUI::~ChatUI()
+{
+    stop();
+}
 
 void ChatUI::start()
 {
+    updateChatUI();
     running = true;
-    std::thread input_t(&ChatUI::input_thread, this);
-    std::thread update_t(&ChatUI::update_thread, this, 5);
-    input_t.detach();
-    update_t.detach();
+
+    update_thread_future = std::async(std::launch::async, &ChatUI::update_thread, this, 3);
+
+    input_thread();
 }
 
-void ChatUI::stop() 
+void ChatUI::stop()
 {
     running = false;
     cv.notify_all();
-}
 
-void ChatUI::input_thread() 
-{
-    while (true)
-    {
-        std::string tmp;
-        if (std::getline(std::cin, tmp)) 
-        {
-            std::lock_guard<std::mutex> lock(mtx);
-            user_input = tmp;
-            input_ready = true;
-            cv.notify_one(); 
-        }
+    if (update_thread_future.valid()) {
+        update_thread_future.get();
     }
 }
 
-void ChatUI::update_thread(int interval_seconds) 
+void ChatUI::input_thread()
 {
-    while (true)
+    while (running)
     {
-        
-        std::unique_lock<std::mutex> lock(mtx);
+        std::string input;
+        std::getline(std::cin, input);
 
-        if (cv.wait_for(lock, std::chrono::seconds(interval_seconds),
-            [this] { return this->input_ready.load(); }))
-        {
-            input_ready = false;
-
-            std::string input = user_input;
-            user_input.clear();
-
-            lock.unlock();
-            inputHandler(input);
-        }
-        else
-        {
-            lock.unlock();
-            updateChat();
+        if (input == "/q") {
+            stop();
+            return;
         }
 
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        inputHandler(input);
     }
 }
 
-
-void ChatUI::inputHandler(std::string s)
+void ChatUI::update_thread(int interval_seconds)
 {
-    if (s == "/invite")
+    while (running)
     {
+        {
+            std::unique_lock<std::mutex> lock(mtx);
+            cv.wait_for(lock, std::chrono::seconds(interval_seconds),
+                [this] { return !running; });
+
+            if (!running) break;
+        }
+
+        updateChat();
+    }
+}
+
+void ChatUI::inputHandler(const std::string& s)
+{
+    if (s == "/invite") {
 
     }
-    else
-        if (s == "/save")
-        {
-
-        }
-        //else app->sendMessage(std::to_string(chatId)),s);
+    else if (s == "/save") {
+    }
+    if (s.size() > 5 && s.substr(0, 5) == "/load")
+    {
+        //load image
+    }
+    else {
+        // Отправка сообщения
+        // app.sendMessage(std::to_string(chatId), s);
+        updateChatUI();
+    }
 }
+
 void ChatUI::updateChat()
 {
-    time_t tmp = time(0);
-    //messages.emplace_back(app->getNewMessage(std::to_string(chatId), lastUpdateTime));
-    lastUpdateTime = tmp;
+    auto new_messages = app->getNewMessage(lastUpdateTime);
+    if (new_messages.empty()) return;
+    lastUpdateTime = time(0);
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        for (auto& msg : new_messages) {
+            messages.push_back(std::move(msg));
+        }
+        
+    }
+
+    // Обновляем UI
+    updateChatUI();
+}
+
+void ChatUI::updateChatUI()
+{
+    std::lock_guard<std::mutex> lock(mtx);
+
+    clearScreen();
+    std::cout << "===" << app->getCurChatName() << "===\n\n";
+
+    for (auto& msg : messages) {
+        std::cout << msg->to_string() << '\n';
+    }
+
+    std::cout << "\nWrite message (/q - exit): ";
+    std::flush(std::cout);
 }

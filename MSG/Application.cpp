@@ -119,4 +119,5 @@ void Application::sendMessage(const std::string& id, const std::string& message)
 void Application::loadChat(unsigned int id)
 {
 	choosed_chat = client->loadChat(user->getUsername(),id);
+	chatName = client->getChatName(choosed_chat);
 }

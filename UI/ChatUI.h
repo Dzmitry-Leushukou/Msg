@@ -2,30 +2,38 @@
 #include "Page.h"
 #include "Message.h"
 #include <iostream>
-#include <thread>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
 #include <chrono>
 #include <string>
+#include <future> 
+#include <memory>
 class ChatUI :
     public Page
 {
 public:
     ChatUI(Application& app, unsigned int num);
+    virtual ~ChatUI();
+
     virtual void start() override;
     void stop();
 private:
     void input_thread();
-    void inputHandler(std::string s);
-    void updateChat();
     void update_thread(int interval_seconds);
-    std::atomic<bool> input_ready{ false };
+    void inputHandler(const std::string& s);
+    void updateChat();
+    void updateChatUI();
+
+    unsigned int chatId;
+
     std::atomic<bool> running{ true };
-    std::string user_input;
     std::mutex mtx;
     std::condition_variable cv;
-    std::vector<std::unique_ptr<Message>>messages;
-    time_t lastUpdateTime=0;
+
+    std::vector<std::unique_ptr<Message>> messages;
+    time_t lastUpdateTime = 0;
+
+    std::future<void> update_thread_future;
 };
 
