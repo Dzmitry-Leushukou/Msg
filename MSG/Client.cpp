@@ -669,8 +669,8 @@ void Client::addChat(const std::string& id, std::vector<unsigned char>key, const
 	char* escaped_username = curl_easy_escape(curl, username.c_str(), username.size());
 	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
 		"/databases/(default)/documents/users/" + std::string(escaped_username) +
-		"?updateMask.fieldPaths=chatsId" +  // Добавляем chatsId
-		"&updateMask.fieldPaths=chatsKey" +  // Добавляем chatsKey
+		"?updateMask.fieldPaths=chatsId" + 
+		"&updateMask.fieldPaths=chatsKey" +
 		"&key=" + api;
 	curl_free(escaped_username);
 	

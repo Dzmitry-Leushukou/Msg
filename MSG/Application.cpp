@@ -106,3 +106,13 @@ void Application::acceptInvite(const std::string& id, const std::string& key)
 	client->addChat(id,Crypto::base64Decode(key), user->getUsername()); 
 	
 }
+
+std::vector<Message>Application::getNewMessage(const std::string& id)
+{
+	
+}
+
+void Application::sendMessage(const std::string& id, const std::string& message)
+{
+	
+}

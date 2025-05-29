@@ -32,6 +32,8 @@ public:
 	std::string getChatName(const std::string& id)const;
 	void popInvite();
 	void acceptInvite(const std::string& id, const std::string& key);
+	std::vector<Message>getNewMessage(const std::string& id);
+	void sendMessage(const std::string& id, const std::string& message);
 private:
 
 	User* user = nullptr;
