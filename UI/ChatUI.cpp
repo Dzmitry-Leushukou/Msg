@@ -1,8 +1,8 @@
-#include "ChatUI.h"
+п»ї#include "ChatUI.h"
 
 ChatUI::ChatUI(Application& app, unsigned int num)
 {
-	this->app = &app;
+    this->app = &app;
     this->app->loadChat(num);
 }
 ChatUI::~ChatUI()
@@ -12,10 +12,10 @@ ChatUI::~ChatUI()
 
 void ChatUI::start()
 {
-    updateChat();
+    updateChatUI();
     running = true;
 
-    update_thread_future = std::async(std::launch::async, &ChatUI::update_thread, this, 2);
+    update_thread_future = std::async(std::launch::async, &ChatUI::update_thread, this, 3);
 
     input_thread();
 }
@@ -41,7 +41,7 @@ void ChatUI::input_thread()
         {
             stop();
             return;
-        }
+        }else
         if (input == "s")
         {
             pauseUpdates();
@@ -49,12 +49,14 @@ void ChatUI::input_thread()
             resumeUpdates();
             updateChat();
         }
+        else
         if (input == "i")
         {
             pauseUpdates();
             sendImage();
             resumeUpdates();
         }
+        else
         if (input == "+")
         {
 
@@ -62,6 +64,10 @@ void ChatUI::input_thread()
             sendInvite();
             resumeUpdates();
             updateChat();
+        }
+        else
+        {
+            std::cout << "Wrong input. Try again\n";
         }
     }
 }
@@ -100,7 +106,7 @@ void ChatUI::updateChat()
         for (auto& msg : new_messages) {
             messages.push_back(std::move(msg));
         }
-        
+
     }
     updateChatUI();
 }
@@ -113,7 +119,7 @@ void ChatUI::updateChatUI()
     std::cout << "===" << app->getCurChatName() << "===\n\n";
 
     for (auto& msg : messages) {
-        std::cout << msg->to_string();
+        std::cout << msg->to_string() << '\n';
     }
 
     std::cout << "=============================\nq - exit\ns - write text message\ni - sent image\n+ - send invite to other user\nWrite type of opreation: ";
@@ -132,9 +138,9 @@ void ChatUI::resumeUpdates()
         std::lock_guard<std::mutex> lock(mtx);
         updatesPaused = false;
     }
-    pause_cv.notify_one();  
-    updateChatUI();        
-    //std::cout << "\n[Обновления возобновлены]\n";
+    pause_cv.notify_one();
+    updateChatUI();
+    //std::cout << "\n[пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ]\n";
 }
 
 void ChatUI::sendMessage()
@@ -143,7 +149,7 @@ void ChatUI::sendMessage()
     std::string s;
     std::string sender = "unknown";
     std::getline(std::cin, s);
-    
+
     app->sendMessage(std::make_unique<Text>(sender, s, std::to_string(time(0))));
 }
 void ChatUI::sendInvite()
@@ -165,8 +171,8 @@ void ChatUI::sendImage()
     std::string s;
     std::cout << "Write filepath: ";
     std::getline(std::cin, s);
-    
-    try 
+
+    try
     {
         //app->sendImage(s);
     }

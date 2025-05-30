@@ -1,5 +1,8 @@
 #include "Crypto.h"
-
+std::string Crypto::BASE64_CHARS =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+"abcdefghijklmnopqrstuvwxyz"
+"0123456789+/";
 void Crypto::init()
 {
     if (sodium_init() < 0) 
@@ -249,54 +252,179 @@ std::string Crypto::encryptSymmetric(
         throw std::runtime_error("Invalid key size for symmetric encryption");
     }
 
+    // Генерация nonce
     unsigned char nonce[crypto_aead_aes256gcm_NPUBBYTES];
     randombytes_buf(nonce, sizeof(nonce));
 
-    std::string ciphertext(message.size() + crypto_aead_aes256gcm_ABYTES, '\0');
+    // Выделение буфера для шифртекста
+    std::vector<unsigned char> ciphertext(
+        message.size() + crypto_aead_aes256gcm_ABYTES
+    );
     unsigned long long ciphertext_len;
 
+    // Шифрование
     crypto_aead_aes256gcm_encrypt(
-        reinterpret_cast<unsigned char*>(&ciphertext[0]), &ciphertext_len,
+        ciphertext.data(), &ciphertext_len,
         reinterpret_cast<const unsigned char*>(message.data()), message.size(),
-        nullptr, 0,  
-        nullptr,     
+        nullptr, 0,  // AAD
+        nullptr,      // nsec (не используется)
         nonce, key.data()
     );
 
-    ciphertext.resize(ciphertext_len);
-    return std::string(nonce, nonce + sizeof(nonce)) + ciphertext;
+    // Объединяем nonce и шифртекст
+    std::vector<unsigned char> combined;
+    combined.reserve(sizeof(nonce) + ciphertext_len);
+    combined.insert(combined.end(), nonce, nonce + sizeof(nonce));
+    combined.insert(combined.end(), ciphertext.data(), ciphertext.data() + ciphertext_len);
+
+    // Кодируем в Base64
+    return base64Encode(combined);
 }
 
 std::string Crypto::decryptSymmetric(
-    const std::string& ciphertext,
+    const std::string& base64_ciphertext,
     const std::vector<unsigned char>& key)
 {
     if (key.size() != crypto_aead_aes256gcm_KEYBYTES) {
         throw std::runtime_error("Invalid key size for symmetric decryption");
     }
 
-    if (ciphertext.size() < crypto_aead_aes256gcm_NPUBBYTES + crypto_aead_aes256gcm_ABYTES) {
-        throw std::runtime_error("Ciphertext too short");
+    // Декодируем Base64
+    std::vector<unsigned char> combined = base64Decode(base64_ciphertext);
+
+    // Проверка минимального размера
+    const size_t min_size = crypto_aead_aes256gcm_NPUBBYTES + crypto_aead_aes256gcm_ABYTES;
+    if (combined.size() < min_size) {
+        throw std::runtime_error("Ciphertext too short after base64 decoding");
     }
 
+    // Извлекаем nonce
     unsigned char nonce[crypto_aead_aes256gcm_NPUBBYTES];
-    std::copy_n(ciphertext.data(), sizeof(nonce), nonce);
+    std::copy_n(combined.data(), sizeof(nonce), nonce);
 
-    const std::string encrypted_data = ciphertext.substr(sizeof(nonce));
+    // Извлекаем зашифрованные данные
+    const unsigned char* encrypted_data = combined.data() + sizeof(nonce);
+    const size_t encrypted_data_len = combined.size() - sizeof(nonce);
 
-    std::string plaintext(encrypted_data.size() - crypto_aead_aes256gcm_ABYTES, '\0');
+    // Буфер для расшифрованного текста
+    std::vector<unsigned char> plaintext(encrypted_data_len);
     unsigned long long plaintext_len;
 
+    // Расшифровка
     if (crypto_aead_aes256gcm_decrypt(
-        reinterpret_cast<unsigned char*>(&plaintext[0]), &plaintext_len,
-        nullptr,
-        reinterpret_cast<const unsigned char*>(encrypted_data.data()), encrypted_data.size(),
-        nullptr, 0,
+        plaintext.data(), &plaintext_len,
+        nullptr, // nsec (не используется)
+        encrypted_data, encrypted_data_len,
+        nullptr, 0, // AAD
         nonce, key.data()
     ) != 0) {
         throw std::runtime_error("Symmetric decryption failed: authentication error");
     }
 
-    plaintext.resize(plaintext_len);
-    return plaintext;
+    // Возвращаем расшифрованную строку
+    return std::string(plaintext.begin(), plaintext.begin() + plaintext_len);
+}
+
+std::string Crypto::base64Encode2(const std::string& input) {
+    std::string encoded;
+    int i = 0;
+    int j = 0;
+    unsigned char char_array_3[3];
+    unsigned char char_array_4[4];
+
+    for (const unsigned char c : input) {
+        char_array_3[i++] = c;
+        if (i == 3) {
+            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+            char_array_4[3] = char_array_3[2] & 0x3f;
+
+            for (i = 0; i < 4; i++) {
+                encoded += BASE64_CHARS[char_array_4[i]];
+            }
+            i = 0;
+        }
+    }
+
+    if (i) {
+        for (j = i; j < 3; j++) {
+            char_array_3[j] = '\0';
+        }
+
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        char_array_4[3] = char_array_3[2] & 0x3f;
+
+        for (j = 0; j < i + 1; j++) {
+            encoded += BASE64_CHARS[char_array_4[j]];
+        }
+
+        while (i++ < 3) {
+            encoded += '=';
+        }
+    }
+
+    return encoded;
+}
+
+std::string Crypto::base64Decode2(const std::string& encoded) {
+    size_t in_len = encoded.size();
+    int i = 0;
+    int j = 0;
+    int in_ = 0;
+    unsigned char char_array_4[4], char_array_3[3];
+    std::string decoded;
+
+    auto is_base64 = [](unsigned char c) {
+        return (isalnum(c) || (c == '+') || (c == '/'));
+        };
+
+    while (in_len-- && (encoded[in_] != '=') && is_base64(encoded[in_])) {
+        char_array_4[i++] = encoded[in_]; in_++;
+        if (i == 4) {
+            for (i = 0; i < 4; i++) {
+                size_t pos = BASE64_CHARS.find(char_array_4[i]);
+                if (pos == std::string::npos) {
+                    throw std::runtime_error("Invalid base64 character");
+                }
+                char_array_4[i] = pos;
+            }
+
+            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+            for (i = 0; i < 3; i++) {
+                decoded += char_array_3[i];
+            }
+            i = 0;
+        }
+    }
+
+    if (i) {
+        for (j = i; j < 4; j++) {
+            char_array_4[j] = 0;
+        }
+
+        for (j = 0; j < 4; j++) {
+            size_t pos = BASE64_CHARS.find(char_array_4[j]);
+            if (pos == std::string::npos && j > i) continue;
+            if (pos == std::string::npos) {
+                throw std::runtime_error("Invalid base64 character");
+            }
+            char_array_4[j] = pos;
+        }
+
+        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+        char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+        for (j = 0; j < i - 1; j++) {
+            decoded += char_array_3[j];
+        }
+    }
+
+    return decoded;
 }

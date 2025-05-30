@@ -30,5 +30,9 @@ class Crypto
 		static std::string encryptSymmetric(const std::string& message,const std::vector<unsigned char>& key);
 
 		static std::string decryptSymmetric(const std::string& ciphertext,const std::vector<unsigned char>& key);
+		static std::string BASE64_CHARS;
+
+        static std::string base64Encode2(const std::string& input);
+        static std::string base64Decode2(const std::string& encoded);
 };
 

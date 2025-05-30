@@ -1173,7 +1173,7 @@ std::vector<std::unique_ptr<Message>> Client::getNewMessages(
 	const std::string& id, time_t lastUpdateTime)
 {
 	json messages_field = getChatField(id, "messages");
-
+	auto key = FileService::loadFromFile("tmp.tmp");
 	if (!messages_field.contains("arrayValue") ||
 		!messages_field["arrayValue"].contains("values") ||
 		!messages_field["arrayValue"]["values"].is_array())
@@ -1184,7 +1184,6 @@ std::vector<std::unique_ptr<Message>> Client::getNewMessages(
 	std::vector<std::unique_ptr<Message>> new_messages;
 	for (auto& item : messages_field["arrayValue"]["values"])
 	{
-		// Проверяем обязательные поля
 		if (!item.contains("mapValue") ||
 			!item["mapValue"].contains("fields") ||
 			!item["mapValue"]["fields"].contains("timestamp") ||
@@ -1194,7 +1193,6 @@ std::vector<std::unique_ptr<Message>> Client::getNewMessages(
 			continue;
 		}
 
-		// Извлекаем timestamp (корректное поле!)
 		auto& ts_field = item["mapValue"]["fields"]["timestamp"];
 		if (!ts_field.contains("integerValue")) continue;
 
@@ -1209,16 +1207,13 @@ std::vector<std::unique_ptr<Message>> Client::getNewMessages(
 			continue;
 		}
 
-		// Пропускаем старые сообщения
 		if (timestamp <= lastUpdateTime) continue;
 
-		// Извлекаем основные данные
-		std::string sender = item["mapValue"]["fields"]["sender"]["stringValue"];
-		std::string content = item["mapValue"]["fields"]["content"]["stringValue"];
+		std::string sender = Crypto::decryptSymmetric(item["mapValue"]["fields"]["sender"]["stringValue"],key);
+		std::string content = Crypto::decryptSymmetric(item["mapValue"]["fields"]["content"]["stringValue"],key);
 
-		// Проверяем тип сообщения
 		if (item["mapValue"]["fields"].contains("format")) {
-			std::string format = item["mapValue"]["fields"]["format"]["stringValue"];
+			std::string format = Crypto::decryptSymmetric(item["mapValue"]["fields"]["format"]["stringValue"],key);
 			new_messages.push_back(
 				std::make_unique<Image>(sender, content, format, std::to_string(timestamp))
 			);
@@ -1246,16 +1241,16 @@ void Client::addMessage(const std::string& chat_id, std::unique_ptr<Message> msg
 {
 	nlohmann::json new_message;
 	Text* text_msg = dynamic_cast<Text*>(msg.get());
-
+	auto key = FileService::loadFromFile("tmp.tmp");
 	if (!text_msg) {
 		Image* image_msg = dynamic_cast<Image*>(msg.get());
 		new_message = {
 			{"mapValue", {
 				{"fields", {
-					{"sender", {{"stringValue", image_msg->getSender()}}},
-					{"content", {{"stringValue", image_msg->getData()}}},
+					{"sender", {{"stringValue", Crypto::encryptSymmetric(image_msg->getSender(),key)}}},
+					{"content", {{"stringValue", Crypto::encryptSymmetric(image_msg->getData(),key)}}},
 					{"timestamp", {{"integerValue", std::stol(image_msg->getTimestamp())}}},
-					{"format", {{"stringValue", image_msg->getFormat()}}}
+					{"format", {{"stringValue", Crypto::encryptSymmetric(image_msg->getFormat(),key)}}}
 				}}
 			}}
 		};
@@ -1264,19 +1259,17 @@ void Client::addMessage(const std::string& chat_id, std::unique_ptr<Message> msg
 		new_message = {
 			{"mapValue", {
 				{"fields", {
-					{"sender", {{"stringValue", text_msg->getSender()}}},
-					{"content", {{"stringValue", text_msg->getData()}}},
+					{"sender", {{"stringValue", Crypto::encryptSymmetric(text_msg->getSender(),key)}}},
+					{"content", {{"stringValue", Crypto::encryptSymmetric(text_msg->getData(),key)}}},
 					{"timestamp", {{"integerValue", std::stol(text_msg->getTimestamp())}}}
 				}}
 			}}
 		};
 	}
 
-	// Get the existing messages array correctly
 	nlohmann::json chat_doc = getChatField(chat_id, "messages");
 	nlohmann::json messages_array = nlohmann::json::array();
 
-	// Correctly extract existing messages
 	if (!chat_doc.empty() &&
 		chat_doc.contains("arrayValue") &&
 		chat_doc["arrayValue"].contains("values"))
@@ -1284,7 +1277,6 @@ void Client::addMessage(const std::string& chat_id, std::unique_ptr<Message> msg
 		messages_array = chat_doc["arrayValue"]["values"];
 	}
 
-	// Add the new message
 	messages_array.push_back(new_message);
 
 	CURL* curl = curl_easy_init();
@@ -1296,7 +1288,6 @@ void Client::addMessage(const std::string& chat_id, std::unique_ptr<Message> msg
 		"/databases/(default)/documents/chats/" + chat_id +
 		"?updateMask.fieldPaths=messages&key=" + api;
 
-	// Build the update body
 	nlohmann::json update_body = {
 		{"fields", {
 			{"messages", {
