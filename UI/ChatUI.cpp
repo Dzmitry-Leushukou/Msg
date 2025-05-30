@@ -66,6 +66,14 @@ void ChatUI::input_thread()
             updateChat();
         }
         else
+            if (input == "o")
+            {
+                pauseUpdates();
+                openImage();
+                resumeUpdates();
+                updateChat();
+            }
+        else
         {
             std::cout << "Wrong input. Try again\n";
         }
@@ -140,7 +148,6 @@ void ChatUI::resumeUpdates()
     }
     pause_cv.notify_one();
     updateChatUI();
-    //std::cout << "\n[���������� ������������]\n";
 }
 
 void ChatUI::sendMessage()
@@ -156,13 +163,14 @@ void ChatUI::sendInvite()
 {
     std::cout << "Write username of reciever: ";
     std::string s;
+    std::getline(std::cin, s);
     try
     {
-        //app->sendInvite(s);
+        app->sendInvite(s);
     }
-    catch (...)
+    catch (std::exception& e)
     {
-        std::cout << "Something went wrong. Try again\n";
+        std::cout << e.what()<<"\n";
         pause();
     }
 }
@@ -181,4 +189,9 @@ void ChatUI::sendImage()
         std::cout << "Something went wrong. Try again\n";
         pause();
     }
+}
+
+void ChatUI::openImage()
+{
+
 }

@@ -39,6 +39,7 @@ public:
 	{
 		return chatName;
 	}
+	void sendInvite(const std::string& username);
 private:
 
 	User* user = nullptr;

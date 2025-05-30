@@ -104,7 +104,7 @@ void Application::popInvite()
 void Application::acceptInvite(const std::string& id, const std::string& key)
 {
 	client->addChat(id,Crypto::base64Decode(key), user->getUsername()); 
-	
+	client->increaseChatUsers(id);
 }
 
 std::vector<std::unique_ptr<Message>>Application::getNewMessage(time_t lastUpdateTime)
@@ -117,8 +117,14 @@ void Application::sendMessage(std::unique_ptr<Message> message)
 	message->setSender(user->getUsername());
 	client->addMessage(choosed_chat, std::move(message));
 }
+
 void Application::loadChat(unsigned int id)
 {
 	choosed_chat = client->loadChat(user->getUsername(),id);
 	chatName = client->getChatName(choosed_chat);
+}
+
+void Application::sendInvite(const std::string& username)
+{
+	client->addInvite(username, choosed_chat, user->getUsername(),FileService::loadFromFile("tmp.tmp"));
 }

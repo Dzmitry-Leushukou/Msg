@@ -27,7 +27,7 @@ void InvitesMenu::start()
 		if (s == "y")
 		{
 			if (q[0] != "")
-				app->acceptInvite(q[0], q[1]);
+				app->acceptInvite(q[0], q[2]);
 		}
 		else if (s == "n")
 		{

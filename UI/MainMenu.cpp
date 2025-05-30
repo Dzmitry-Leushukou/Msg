@@ -56,6 +56,7 @@ void MainMenu::inputHandler()
 		rm->start();
 		delete rm;
 		rm = nullptr;
+		getHeaders();
 	}
 	else
 	if (s == "d")

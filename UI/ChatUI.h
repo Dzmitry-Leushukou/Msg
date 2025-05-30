@@ -30,6 +30,7 @@ private:
     void sendMessage();
     void sendInvite();
     void sendImage();
+    void openImage();
     std::condition_variable pause_cv;
     std::atomic<bool> updatesPaused{ false };
 

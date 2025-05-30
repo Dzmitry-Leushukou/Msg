@@ -55,6 +55,10 @@ public:
 	std::vector<std::unique_ptr<Message>>getNewMessages(const std::string& id, time_t lastUpdateTime);
 	std::string loadChat(const std::string& username, unsigned int cid);
 	void addMessage(const std::string& id, std::unique_ptr<Message>msg);
+	void addInvite(const std::string& username, const std::string& id, const std::string& sender,std::vector<unsigned char> ckey);
+	void increaseChatUsers(const std::string& id);
+	
+
 private:
 	std::vector<std::string> getMACs(const std::string& username);
 	std::string findChatsId();

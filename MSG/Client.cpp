@@ -1022,14 +1022,15 @@ std::vector<std::string> Client::getInvite(const std::string& username)
 	return { "", "" };
 }
 
-bool Client::userHasChatId(const std::string& username, const std::string& id)
+bool Client::userHasChatId(const std::string& username, const std::string& target_id)
 {
-	if (!isChatExists(id) || !isUsernameExists(username))
+	if (!isChatExists(target_id) || !isUsernameExists(username))
 		return false;
 	json Ids = getUserField(username, "chatsId");
 	for (auto& id : Ids["arrayValue"]["values"])
 	{
-		if(id["stringValue"] == id);
+		std::string curId = id["stringValue"];
+		if( curId== target_id)
 		return true;
 	}
 	return false;
@@ -1322,4 +1323,105 @@ void Client::addMessage(const std::string& chat_id, std::unique_ptr<Message> msg
 		throw std::runtime_error(
 			"Server Error (" + std::to_string(http_code) + "): " + response + "\n");
 	}
+}
+
+void Client::addInvite(const std::string& username, const std::string& id, const std::string& sender, std::vector<unsigned char> ckey)
+{
+	if (userHasChatId(username, id))
+		throw std::exception("User already in this chat");
+
+	// get Chats id
+
+	json invites = getUserField(username, "chat_invites");
+	json new_message;
+	new_message = {
+			{"mapValue", {
+				{"fields", {
+					{"chat_id", {{"stringValue", id}}},
+					{"sender", {{"stringValue", sender}}},
+					{"key", {{"stringValue", Crypto::base64Encode(Crypto::encryptAsymmetric(getPublicKey(username),ckey))}}}
+				}}
+			}}
+	};
+	if (!invites.contains("arrayValue") ||
+		!invites["arrayValue"].contains("values") ||
+		!invites["arrayValue"]["values"].is_array() ||
+		invites["arrayValue"]["values"].empty()) {
+		
+	}
+	else
+	for (auto& i : invites["arrayValue"]["values"])
+	{
+		std::string chat_id = i["mapValue"]["fields"]["chat_id"]["stringValue"].get<std::string>();
+		std::string sender = i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
+		std::string key = i["mapValue"]["fields"]["key"]["stringValue"].get<std::string>();
+		if(chat_id==id)
+			throw std::exception("User already have invite to this chat");
+	}
+	
+	nlohmann::json inv = nlohmann::json::array();
+
+	if (!invites.empty() &&
+		invites.contains("arrayValue") &&
+		invites["arrayValue"].contains("values"))
+	{
+		inv = invites["arrayValue"]["values"];
+	}
+
+	inv.push_back(new_message);
+
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/users/" + username +
+		"?updateMask.fieldPaths=chat_invites&key=" + api;
+
+	nlohmann::json update_body = {
+		{"fields", {
+			{"chat_invites", {
+				{"arrayValue", {
+					{"values", inv}
+				}}
+			}}
+		}}
+	};
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+	std::string request_body = update_body.dump();
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Server Error (" + std::to_string(http_code) + "): " + response + "\n");
+	}
+
+}
+
+void Client::increaseChatUsers(const std::string& id)
+{
+	json amount = getChatField(id, "usersAmount");
+	std::string s = amount["stringValue"];
+	long long kol = std::stoll(s);
+	kol++;
+	
+	updateChatUserAmount(id, std::to_string(kol));
 }
