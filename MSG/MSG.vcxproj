@@ -135,7 +135,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="Chat.cpp" />
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="FileService.cpp" />
@@ -147,7 +146,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
-    <ClInclude Include="Chat.h" />
     <ClInclude Include="Crypto.h" />
     <ClInclude Include="Client.h" />
     <ClInclude Include="FileService.h" />
@@ -156,6 +154,9 @@
     <ClInclude Include="Text.h" />
     <ClInclude Include="User.h" />
     <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="ChatUI">
+    <Position X="3.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAAADghAAAAAAAgQIogQUABCAEARABEAAg=</HashCode>
+      <FileName>ChatUI.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="CreateChatForm">
+    <Position X="10.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAAAAAAAAAAAEAAAABAAEAAAAAAA=</HashCode>
+      <FileName>CreateChatForm.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="InvitesMenu">
+    <Position X="15" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgAAAAAAAAgAAAAACAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>InvitesMenu.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="LoginForm">
+    <Position X="6" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAIAAACAAAAAgAAAAAAEAAAAEAAAAAAAAAgAAAAQ=</HashCode>
+      <FileName>LoginForm.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MainMenu">
+    <Position X="12.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAgAAAAAAAAgAAAAAAgQAAAAAAAAAAEAAAAAAAA=</HashCode>
+      <FileName>MainMenu.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Page" Collapsed="true">
+    <Position X="9.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AJAAAAAAABAAAAAgAAAAAAAAAAQAAAAAACAAAAAAIAA=</HashCode>
+      <FileName>Page.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="RequestsMenu">
+    <Position X="8.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgIAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>RequestsMenu.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="UI">
+    <Position X="17.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAAAAgAAAAAAAIAAAAAAAAACAAAAAAAAA=</HashCode>
+      <FileName>UI.h</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
