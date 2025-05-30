@@ -12,10 +12,10 @@ ChatUI::~ChatUI()
 
 void ChatUI::start()
 {
-    updateChatUI();
+    updateChat();
     running = true;
 
-    update_thread_future = std::async(std::launch::async, &ChatUI::update_thread, this, 3);
+    update_thread_future = std::async(std::launch::async, &ChatUI::update_thread, this, 2);
 
     input_thread();
 }
@@ -47,7 +47,7 @@ void ChatUI::input_thread()
             pauseUpdates();
             sendMessage();
             resumeUpdates();
-            updateChatUI();
+            updateChat();
         }
         if (input == "i")
         {
@@ -61,7 +61,7 @@ void ChatUI::input_thread()
             pauseUpdates();
             sendInvite();
             resumeUpdates();
-            updateChatUI();
+            updateChat();
         }
     }
 }
@@ -113,7 +113,7 @@ void ChatUI::updateChatUI()
     std::cout << "===" << app->getCurChatName() << "===\n\n";
 
     for (auto& msg : messages) {
-        std::cout << msg->to_string() << '\n';
+        std::cout << msg->to_string();
     }
 
     std::cout << "=============================\nq - exit\ns - write text message\ni - sent image\n+ - send invite to other user\nWrite type of opreation: ";
