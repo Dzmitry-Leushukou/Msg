@@ -125,12 +125,16 @@ void ChatUI::updateChatUI()
 
     clearScreen();
     std::cout << "===" << app->getCurChatName() << "===\n\n";
-
-    for (auto& msg : messages) {
+    int id = 0;
+    for (auto& msg : messages) 
+    {
+        Image* image_msg = dynamic_cast<Image*>(msg.get());
+        if (image_msg)
+            std::cout << "[id = " << id << "]\n",id++;
         std::cout << msg->to_string() << '\n';
     }
-
-    std::cout << "=============================\nq - exit\ns - write text message\ni - sent image\n+ - send invite to other user\nWrite type of opreation: ";
+    imagesCount = id;
+    std::cout << "=============================\nq - exit\ns - write text message\ni - sent image\no - open image\n+ - send invite to other user\nWrite type of opreation: ";
     std::flush(std::cout);
 }
 
@@ -182,7 +186,7 @@ void ChatUI::sendImage()
 
     try
     {
-        //app->sendImage(s);
+        app->sendImage(s);
     }
     catch (...)
     {
@@ -193,5 +197,29 @@ void ChatUI::sendImage()
 
 void ChatUI::openImage()
 {
+    int id = getInt("To open image write id of message with it(-1 to exit): ",-1, imagesCount - 1);
+    if (id == -1)
+        return;
+    std::string data;
+    std::string format;
+    for (auto& msg : messages)
+    {
+        Image* image_msg = dynamic_cast<Image*>(msg.get());
+        if (image_msg)
+        {
+            id--;
+            if (id < 0)
+            {
+                data = msg->getData();
+                format = image_msg->getFormat();
+                std::string path = FileService::saveImage(data, format);
+                std::cout << "Image save to " << path << '\n';
+                std::string cmd = "start " + path;
+                system(cmd.c_str());
+                system("pause");
+                return;
+            }
+        }
+    }
 
 }

@@ -40,6 +40,7 @@ public:
 		return chatName;
 	}
 	void sendInvite(const std::string& username);
+	void sendImage(const std ::string& path);
 private:
 
 	User* user = nullptr;

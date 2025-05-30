@@ -128,3 +128,8 @@ void Application::sendInvite(const std::string& username)
 {
 	client->addInvite(username, choosed_chat, user->getUsername(),FileService::loadFromFile("tmp.tmp"));
 }
+
+void Application::sendImage(const std::string& path)
+{
+	sendMessage(std::make_unique<Image>("clown", FileService::getImageData(path), FileService::getExt(path), std::to_string(time(0))));
+}

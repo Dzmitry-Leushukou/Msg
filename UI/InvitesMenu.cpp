@@ -18,7 +18,7 @@ void InvitesMenu::start()
 		if (q[0] == "")
 			std::cout << "No invites\n";
 		else
-			std::cout << "Invite to chat \""+app->getChatName(q[0]) + "+\" from " + q[1] << '\n';
+			std::cout << "Invite to chat \""+app->getChatName(q[0]) + "\" from " + q[1] << '\n';
 		std::cout << "-------------------------------\n";
 		help();
 		std::getline(std::cin, s);

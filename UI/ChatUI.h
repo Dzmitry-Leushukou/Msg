@@ -42,7 +42,7 @@ private:
 
     std::vector<std::unique_ptr<Message>> messages;
     time_t lastUpdateTime = 0;
-
+    int imagesCount = 0;
     std::future<void> update_thread_future;
 };
 
