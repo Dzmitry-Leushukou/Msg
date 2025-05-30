@@ -1169,36 +1169,67 @@ std::vector<std::string> Client::getMACs(const std::string& username)
 	return macs;
 }
 
-std::vector<std::unique_ptr<Message>>Client::getNewMessages(const std::string& id,time_t lastUpdateTime)
+std::vector<std::unique_ptr<Message>> Client::getNewMessages(
+	const std::string& id, time_t lastUpdateTime)
 {
-	
-	json invites = getChatField(id, "messages");
+	json messages_field = getChatField(id, "messages");
 
-	if (!invites.contains("arrayValue") ||
-		!invites["arrayValue"].contains("values") ||
-		!invites["arrayValue"]["values"].is_array() ||
-		invites["arrayValue"]["values"].empty()) {
+	if (!messages_field.contains("arrayValue") ||
+		!messages_field["arrayValue"].contains("values") ||
+		!messages_field["arrayValue"]["values"].is_array())
+	{
 		return {};
 	}
-	std::vector<std::unique_ptr<Message>>msg;
-	for (auto& i : invites["arrayValue"]["values"])
+
+	std::vector<std::unique_ptr<Message>> new_messages;
+	for (auto& item : messages_field["arrayValue"]["values"])
 	{
-		std::string content = i["mapValue"]["fields"]["content"]["stringValue"].get<std::string>();
-		std::string sender = i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
-		unsigned long long timestamp = std::stoull(i["mapValue"]["fields"]["key"]["stringValue"].get<std::string>());
-		if (timestamp <= lastUpdateTime)
+		// Проверяем обязательные поля
+		if (!item.contains("mapValue") ||
+			!item["mapValue"].contains("fields") ||
+			!item["mapValue"]["fields"].contains("timestamp") ||
+			!item["mapValue"]["fields"].contains("sender") ||
+			!item["mapValue"]["fields"].contains("content"))
 		{
 			continue;
 		}
-		if (i["mapValue"]["fields"].contains("format"))
-		{
-			msg.push_back(std::make_unique<Image>(sender, content, i["mapValue"]["fields"]["format"]["stringValue"], std::to_string(timestamp)));
-		}
-		else
-			msg.push_back(std::make_unique<Text>(sender, content, std::to_string(timestamp)));
-	}
-	return msg;
 
+		// Извлекаем timestamp (корректное поле!)
+		auto& ts_field = item["mapValue"]["fields"]["timestamp"];
+		if (!ts_field.contains("integerValue")) continue;
+
+		time_t timestamp;
+		if (ts_field["integerValue"].is_string()) {
+			timestamp = std::stoll(ts_field["integerValue"].get<std::string>());
+		}
+		else if (ts_field["integerValue"].is_number()) {
+			timestamp = ts_field["integerValue"].get<time_t>();
+		}
+		else {
+			continue;
+		}
+
+		// Пропускаем старые сообщения
+		if (timestamp <= lastUpdateTime) continue;
+
+		// Извлекаем основные данные
+		std::string sender = item["mapValue"]["fields"]["sender"]["stringValue"];
+		std::string content = item["mapValue"]["fields"]["content"]["stringValue"];
+
+		// Проверяем тип сообщения
+		if (item["mapValue"]["fields"].contains("format")) {
+			std::string format = item["mapValue"]["fields"]["format"]["stringValue"];
+			new_messages.push_back(
+				std::make_unique<Image>(sender, content, format, std::to_string(timestamp))
+			);
+		}
+		else {
+			new_messages.push_back(
+				std::make_unique<Text>(sender, content, std::to_string(timestamp))
+			);
+		}
+	}
+	return new_messages;
 }
 
 std::string Client::loadChat(const std::string& username, unsigned int cid)
