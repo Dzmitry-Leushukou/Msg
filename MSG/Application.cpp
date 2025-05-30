@@ -112,9 +112,10 @@ std::vector<std::unique_ptr<Message>>Application::getNewMessage(time_t lastUpdat
 	return client->getNewMessages(choosed_chat, lastUpdateTime);
 }
 
-void Application::sendMessage(const std::string& id, const std::string& message)
+void Application::sendMessage(std::unique_ptr<Message> message)
 {
-	//return client->getNewMessages(choosed_chat, lastUpdateTime);
+	message->setSender(user->getUsername());
+	client->addMessage(choosed_chat, std::move(message));
 }
 void Application::loadChat(unsigned int id)
 {

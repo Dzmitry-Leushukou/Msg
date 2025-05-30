@@ -37,12 +37,32 @@ void ChatUI::input_thread()
         std::string input;
         std::getline(std::cin, input);
 
-        if (input == "/q") {
+        if (input == "q")
+        {
             stop();
             return;
         }
+        if (input == "s")
+        {
+            pauseUpdates();
+            sendMessage();
+            resumeUpdates();
+            updateChatUI();
+        }
+        if (input == "i")
+        {
+            pauseUpdates();
+            sendImage();
+            resumeUpdates();
+        }
+        if (input == "+")
+        {
 
-        inputHandler(input);
+            pauseUpdates();
+            sendInvite();
+            resumeUpdates();
+            updateChatUI();
+        }
     }
 }
 
@@ -50,35 +70,25 @@ void ChatUI::update_thread(int interval_seconds)
 {
     while (running)
     {
-        {
-            std::unique_lock<std::mutex> lock(mtx);
-            cv.wait_for(lock, std::chrono::seconds(interval_seconds),
-                [this] { return !running; });
+        std::unique_lock<std::mutex> lock(mtx);
 
-            if (!running) break;
-        }
+        pause_cv.wait(lock, [this] {
+            return !updatesPaused.load() || !running;
+            });
 
+        if (!running) break;
+
+        cv.wait_for(lock, std::chrono::seconds(interval_seconds),
+            [this] { return !running || updatesPaused; });
+
+        if (!running || updatesPaused) continue;
+
+        lock.unlock();
         updateChat();
     }
+
 }
 
-void ChatUI::inputHandler(const std::string& s)
-{
-    if (s == "/invite") {
-
-    }
-    else if (s == "/save") {
-    }
-    if (s.size() > 5 && s.substr(0, 5) == "/load")
-    {
-        //load image
-    }
-    else {
-        // Отправка сообщения
-        // app.sendMessage(std::to_string(chatId), s);
-        updateChatUI();
-    }
-}
 
 void ChatUI::updateChat()
 {
@@ -92,8 +102,6 @@ void ChatUI::updateChat()
         }
         
     }
-
-    // Обновляем UI
     updateChatUI();
 }
 
@@ -108,6 +116,63 @@ void ChatUI::updateChatUI()
         std::cout << msg->to_string() << '\n';
     }
 
-    std::cout << "\nWrite message (/q - exit): ";
+    std::cout << "=============================\nq - exit\ns - write text message\ni - sent image\n+ - send invite to other user\nWrite type of opreation: ";
     std::flush(std::cout);
+}
+
+void ChatUI::pauseUpdates()
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    updatesPaused = true;
+}
+
+void ChatUI::resumeUpdates()
+{
+    {
+        std::lock_guard<std::mutex> lock(mtx);
+        updatesPaused = false;
+    }
+    pause_cv.notify_one();  
+    updateChatUI();        
+    //std::cout << "\n[Обновления возобновлены]\n";
+}
+
+void ChatUI::sendMessage()
+{
+    std::cout << "> ";
+    std::string s;
+    std::string sender = "unknown";
+    std::getline(std::cin, s);
+    
+    app->sendMessage(std::make_unique<Text>(sender, s, std::to_string(time(0))));
+}
+void ChatUI::sendInvite()
+{
+    std::cout << "Write username of reciever: ";
+    std::string s;
+    try
+    {
+        //app->sendInvite(s);
+    }
+    catch (...)
+    {
+        std::cout << "Something went wrong. Try again\n";
+        pause();
+    }
+}
+void ChatUI::sendImage()
+{
+    std::string s;
+    std::cout << "Write filepath: ";
+    std::getline(std::cin, s);
+    
+    try 
+    {
+        //app->sendImage(s);
+    }
+    catch (...)
+    {
+        std::cout << "Something went wrong. Try again\n";
+        pause();
+    }
 }

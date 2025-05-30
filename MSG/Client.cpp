@@ -1035,7 +1035,7 @@ bool Client::userHasChatId(const std::string& username, const std::string& id)
 	return false;
 }
 
-std::string Client::getChatName(const std::string& id)
+std::string Client::getChatName(const std::string& id)	
 {
 	return getChatField(id, "name")["stringValue"];
 }
@@ -1171,72 +1171,37 @@ std::vector<std::string> Client::getMACs(const std::string& username)
 
 std::vector<std::unique_ptr<Message>>Client::getNewMessages(const std::string& id,time_t lastUpdateTime)
 {
+	
+	json invites = getChatField(id, "messages");
 
-	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
-		"/databases/(default)/documents:runQuery?key=" + api;
-
-	nlohmann::json query = {
-		{"structuredQuery", {
-			{"from", {{{"collectionId", "chats/" + id + "/messages"}}},
-			{"where", {
-				{"fieldFilter", {
-					{"field", {{"fieldPath", "timestamp"}}},
-					{"op", "GREATER_THAN"},
-					{"value", {{"integerValue", nowTime()}}}
-				}}
-			}},
-			{"orderBy", {
-				{{"field", {{"fieldPath", "timestamp"}}}, {"direction", "ASCENDING"}}
-			}}
-		}}
-	} };
-
-
-	CURL* curl = curl_easy_init();
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_POST, 1L);
-
-	std::string request_body = query.dump();
-	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
-
-	struct curl_slist* headers = nullptr;
-	headers = curl_slist_append(headers, "Content-Type: application/json");
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-	std::string response;
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-	CURLcode res = curl_easy_perform(curl);
-
-	std::vector<std::unique_ptr<Message>> messages;
-	if (res == CURLE_OK) {
-		auto json = nlohmann::json::parse(response);
-		for (const auto& item : json) {
-			if (item.contains("document")) {
-				const auto& doc = item["document"];
-				std::string sender = doc["name"].get<std::string>();
-				std::string text = Crypto::decryptSymmetric(doc["fields"]["text"]["stringValue"].get<std::string>(),FileService::loadFromFile("tmp.tmp"));
-				std::string time = doc["fields"]["timestamp"]["integerValue"].get<std::string>();
-				if (!doc["fields"]["format"].empty())
-					messages.push_back(std::make_unique < Image>(sender, text, doc["fields"]["format"].get<std::string>(), time));
-				else
-					messages.push_back(std::make_unique < Text>(sender,text,time));
-				
-			}
-		}
+	if (!invites.contains("arrayValue") ||
+		!invites["arrayValue"].contains("values") ||
+		!invites["arrayValue"]["values"].is_array() ||
+		invites["arrayValue"]["values"].empty()) {
+		return {};
 	}
-
-	curl_slist_free_all(headers);
-	curl_easy_cleanup(curl);
-
-	return messages;
-
-
+	std::vector<std::unique_ptr<Message>>msg;
+	for (auto& i : invites["arrayValue"]["values"])
+	{
+		std::string content = i["mapValue"]["fields"]["content"]["stringValue"].get<std::string>();
+		std::string sender = i["mapValue"]["fields"]["sender"]["stringValue"].get<std::string>();
+		unsigned long long timestamp = std::stoull(i["mapValue"]["fields"]["key"]["stringValue"].get<std::string>());
+		if (timestamp <= lastUpdateTime)
+		{
+			continue;
+		}
+		if (i["mapValue"]["fields"].contains("format"))
+		{
+			msg.push_back(std::make_unique<Image>(sender, content, i["mapValue"]["fields"]["format"]["stringValue"], std::to_string(timestamp)));
+		}
+		else
+			msg.push_back(std::make_unique<Text>(sender, content, std::to_string(timestamp)));
+	}
+	return msg;
 
 }
 
-std::string Client::loadChat(const std::string& username, unsigned cid)
+std::string Client::loadChat(const std::string& username, unsigned int cid)
 {
 	json Ids = getUserField(username, "chatsId");
 	json Keys = getUserField(username, "chatsKey");
@@ -1244,4 +1209,95 @@ std::string Client::loadChat(const std::string& username, unsigned cid)
 	std::string key = Keys["arrayValue"]["values"][cid]["stringValue"];
 	FileService::saveToFile("tmp.tmp", Crypto::decryptAsymmetric(Crypto::base64Decode(key),publicKey,FileService::loadFromFile(skey_path)));
 	return realId;
+}
+
+void Client::addMessage(const std::string& chat_id, std::unique_ptr<Message> msg)
+{
+	nlohmann::json new_message;
+	Text* text_msg = dynamic_cast<Text*>(msg.get());
+
+	if (!text_msg) {
+		Image* image_msg = dynamic_cast<Image*>(msg.get());
+		new_message = {
+			{"mapValue", {
+				{"fields", {
+					{"sender", {{"stringValue", image_msg->getSender()}}},
+					{"content", {{"stringValue", image_msg->getData()}}},
+					{"timestamp", {{"integerValue", std::stol(image_msg->getTimestamp())}}},
+					{"format", {{"stringValue", image_msg->getFormat()}}}
+				}}
+			}}
+		};
+	}
+	else {
+		new_message = {
+			{"mapValue", {
+				{"fields", {
+					{"sender", {{"stringValue", text_msg->getSender()}}},
+					{"content", {{"stringValue", text_msg->getData()}}},
+					{"timestamp", {{"integerValue", std::stol(text_msg->getTimestamp())}}}
+				}}
+			}}
+		};
+	}
+
+	// Get the existing messages array correctly
+	nlohmann::json chat_doc = getChatField(chat_id, "messages");
+	nlohmann::json messages_array = nlohmann::json::array();
+
+	// Correctly extract existing messages
+	if (!chat_doc.empty() &&
+		chat_doc.contains("arrayValue") &&
+		chat_doc["arrayValue"].contains("values"))
+	{
+		messages_array = chat_doc["arrayValue"]["values"];
+	}
+
+	// Add the new message
+	messages_array.push_back(new_message);
+
+	CURL* curl = curl_easy_init();
+	if (!curl) {
+		throw std::runtime_error("CURL initialization failed");
+	}
+
+	std::string url = "https://firestore.googleapis.com/v1/projects/" + proj_id +
+		"/databases/(default)/documents/chats/" + chat_id +
+		"?updateMask.fieldPaths=messages&key=" + api;
+
+	// Build the update body
+	nlohmann::json update_body = {
+		{"fields", {
+			{"messages", {
+				{"arrayValue", {
+					{"values", messages_array}
+				}}
+			}}
+		}}
+	};
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+	std::string request_body = update_body.dump();
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request_body.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+	std::string response;
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+	CURLcode res = curl_easy_perform(curl);
+	long http_code = 0;
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	if (http_code != 200) {
+		throw std::runtime_error(
+			"Server Error (" + std::to_string(http_code) + "): " + response + "\n");
+	}
 }

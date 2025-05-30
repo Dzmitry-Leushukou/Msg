@@ -33,7 +33,7 @@ public:
 	void popInvite();
 	void acceptInvite(const std::string& id, const std::string& key);
 	std::vector<std::unique_ptr<Message>>getNewMessage(time_t lastUpdateTime);
-	void sendMessage(const std::string& id, const std::string& message);
+	void sendMessage(std::unique_ptr<Message> message);
 	void loadChat(unsigned int id);
 	std::string getCurChatName() const
 	{

@@ -1,6 +1,7 @@
 #pragma once
 #include "Page.h"
-#include "Message.h"
+#include "Text.h"
+#include "Image.h"
 #include <iostream>
 #include <atomic>
 #include <mutex>
@@ -24,6 +25,13 @@ private:
     void inputHandler(const std::string& s);
     void updateChat();
     void updateChatUI();
+    void pauseUpdates();
+    void resumeUpdates();
+    void sendMessage();
+    void sendInvite();
+    void sendImage();
+    std::condition_variable pause_cv;
+    std::atomic<bool> updatesPaused{ false };
 
     unsigned int chatId;
 

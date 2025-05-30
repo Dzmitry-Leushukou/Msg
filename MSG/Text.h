@@ -1,6 +1,12 @@
 #pragma once
+#ifdef MSG_EXPORTS
+#define EXP __declspec(dllexport)
+#else
+#define EXP __declspec(dllimport)
+#endif
 #include "Message.h"
-class Text :
+
+class EXP Text :
     public Message
 {
 public:
