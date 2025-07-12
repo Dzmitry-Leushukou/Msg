@@ -18,21 +18,6 @@ All accounts that have not been logged in for the last 7 days are deactivated. T
 
 ## Data models 
 The database will store encrypted chats and user data.
-### Table of users
-User
-* `username`
-* `id`
-* `chats_id` (What chats does the user belong to)
-* `last_active`
-### Table of chats
-Chat
-* `id`
-* `name`
-* `last_message_time`
-* `messages`
-## Class diagram
-![OOP Course drawio (5)](https://github.com/user-attachments/assets/34978549-01e4-4924-8495-fa3b62a2f6f5)
-
 
 
 
